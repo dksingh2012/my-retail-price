@@ -23,6 +23,7 @@ https://my-retail-price-api.dksingh2012.workers.dev
 Endpoints:
 - /health
 - /api/products?q=milk
+- /api/sources
 - /api/compare?q=milk
 - POST /api/basket
 
