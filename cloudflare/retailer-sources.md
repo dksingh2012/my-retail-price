@@ -11,7 +11,7 @@ MY RETAIL PRICE must show location-specific grocery prices only from permitted d
 | Blinkit | Direct partner/feed arrangement | No public consumer price API verified |
 | Zepto | Direct partner/feed arrangement | No public developer price API verified |
 | BigBasket | Direct partner/feed arrangement | No public consumer price API verified |
-| JioMart | Direct partner/feed arrangement | No public consumer price API verified |
+| JioMart | Direct partner/feed arrangement | Commercial price/listing collection is restricted by current consumer terms; written authorization required |
 
 ## Rules
 1. Never scrape private mobile-app endpoints.
@@ -31,3 +31,7 @@ Swiggy Instamart is the first official integration target because Swiggy current
 - Approved use case / expected volume
 
 Until approval, the app continues using clearly labelled demo data.
+
+
+## Non-scraping policy
+Current retailer terms and partner materials do not provide a safe basis for scraping private consumer endpoints. MY RETAIL PRICE will only ingest data supplied through an authorized retailer feed/API, a documented partner arrangement, or a licensed data provider whose contract permits this use.
