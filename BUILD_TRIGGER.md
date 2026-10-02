@@ -1,0 +1,1 @@
+Automated Android build trigger. The debug APK is produced by .github/workflows/android-build.yml.
