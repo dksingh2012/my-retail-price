@@ -10,6 +10,21 @@ export default {
       if(u.pathname==="/health")
         return json({ok:true,app:"MY RETAIL PRICE",market:"Gurugram",pincode:"122001"});
 
+      if(u.pathname==="/api/sources"){
+        return json({
+          location:"Gurugram",
+          pincode:"122001",
+          sources:[
+            {name:"Swiggy Instamart",key:"instamart",status:"official_integration_available_pending_approval"},
+            {name:"Blinkit",key:"blinkit",status:"partner_or_licensed_feed_required"},
+            {name:"Zepto",key:"zepto",status:"partner_or_licensed_feed_required"},
+            {name:"BigBasket",key:"bigbasket",status:"partner_or_licensed_feed_required"},
+            {name:"JioMart",key:"jiomart",status:"partner_or_licensed_feed_required"}
+          ],
+          demo_source:{status:"active_for_mvp_testing"}
+        });
+      }
+
       if(u.pathname==="/api/compare"){
         const q=(u.searchParams.get("q")||"").trim();
         if(!q) return json({error:"q is required"},400);
@@ -61,7 +76,7 @@ export default {
       return json({
         app:"MY RETAIL PRICE",
         message:"API online",
-        endpoints:["/health","/api/compare?q=milk","POST /api/basket"]
+        endpoints:["/health","/api/sources","/api/compare?q=milk","POST /api/basket"]
       });
     }catch(e){
       return json({error:String(e?.message||e)},500);
