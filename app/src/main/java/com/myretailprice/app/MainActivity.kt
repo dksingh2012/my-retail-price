@@ -28,6 +28,7 @@ import io.ktor.client.statement.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.builtins.ListSerializer
 
 private const val API = "https://my-retail-price-api.dksingh2012.workers.dev"
 
@@ -77,7 +78,7 @@ suspend fun fetchOffers(client: HttpClient, query: String): List<Offer> {
     val json = Json { ignoreUnknownKeys = true }
     val root = json.decodeFromString<Map<String, kotlinx.serialization.json.JsonElement>>(response.bodyAsText())
     val arr = root["offers"] ?: return emptyList()
-    return json.decodeFromJsonElement<List<Offer>>(arr)
+    return json.decodeFromJsonElement(ListSerializer(Offer.serializer()), arr)
 }
 
 @Composable
