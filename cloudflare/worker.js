@@ -20,6 +20,48 @@ export default {
       if(u.pathname==="/health")
         return json({ok:true,app:"MY RETAIL PRICE",market:MARKET,pincode:PIN,data_status:"demo"});
 
+      if(u.pathname==="/api/import" && req.method==="POST"){
+        const token=req.headers.get("X-Import-Token")||"";
+        if(!env.IMPORT_TOKEN || token!==env.IMPORT_TOKEN) return json({error:"Unauthorized"},401);
+        const body=await req.json();
+        const retailer=String(body.retailer||"").trim();
+        const offers=Array.isArray(body.offers)?body.offers:[];
+        const allowed=["blinkit","zepto","bigbasket","jiomart","instamart"];
+        if(!allowed.includes(retailer.toLowerCase())) return json({error:"Unsupported retailer"},400);
+        if(!offers.length || offers.length>500) return json({error:"offers must contain 1-500 records"},400);
+
+        const now=new Date().toISOString();
+        const results=[];
+        for(const x of offers){
+          const name=String(x.name||"").trim();
+          const brand=String(x.brand||"").trim();
+          const pack=String(x.pack||"").trim();
+          const price=Number(x.price);
+          const pincode=String(x.pincode||PIN).trim();
+          if(!name || !Number.isFinite(price) || price<0 || !pincode) continue;
+
+          const existing=await env.DB.prepare(
+            "SELECT id FROM products WHERE name=? AND IFNULL(brand,'')=IFNULL(?, '') AND IFNULL(pack,'')=IFNULL(?, '') LIMIT 1"
+          ).bind(name,brand,pack).first();
+
+          let productId=existing?.id;
+          if(!productId){
+            const ins=await env.DB.prepare(
+              "INSERT INTO products(name,pack,brand,unit_value,unit) VALUES(?,?,?,?,?)"
+            ).bind(name,pack,brand,Number.isFinite(Number(x.unit_value))?Number(x.unit_value):null,String(x.unit||"")).run();
+            productId=ins.meta.last_row_id;
+          }
+
+          await env.DB.prepare(
+            "INSERT INTO offers(product_id,retailer,price,mrp,pincode,available,source,data_status,product_url,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)"
+          ).bind(productId,retailer,price,Number.isFinite(Number(x.mrp))?Number(x.mrp):null,pincode,x.available===false?0:1,String(x.source||retailer),"live_authorized",String(x.product_url||""),now).run();
+
+          results.push({product_id:productId,name,brand,pack,price,pincode});
+        }
+
+        return json({ok:true,retailer,imported:results.length,updated_at:now,data_status:"live_authorized"});
+      }
+
       if(u.pathname==="/api/sources"){
         return json({
           location:MARKET,
