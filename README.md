@@ -51,13 +51,19 @@ The production version must use retailer-authorized APIs, feeds, affiliate/deep 
 4. Search for milk, atta, or another seeded demo product.
 5. Test Smart Basket with comma-separated items such as: milk, atta, salt.
 
+## Current backend status
+- Cloudflare D1 schema is deployed and seeded for MVP testing.
+- Worker exposes `/api/products`, `/api/compare`, `/api/sources`, and `POST /api/basket`.
+- All current prices are explicitly marked `data_status: demo`.
+- Production retailer data is intentionally blocked until permitted/authorized sources are connected.
+
 ## Next
-1. Add real authorized retailer feeds/APIs.
-2. Add pincode-specific availability.
-3. Add delivery/platform fees.
-4. Add quantity support.
-5. Add product matching and unit-price normalization.
-6. Add retailer buy/deep links where permitted.
+1. Apply for Swiggy Instamart production access.
+2. Add authorized feeds/APIs for Blinkit, Zepto, BigBasket and JioMart where available.
+3. Add pincode-specific availability and retailer serviceability.
+4. Add delivery/platform/small-cart fees separately from item price.
+5. Add quantity support and unit-price normalization.
+6. Add product matching and retailer buy/deep links where permitted.
 7. Prepare Play Console testing and release.
 
 ## Google Play
