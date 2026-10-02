@@ -73,11 +73,11 @@ suspend fun fetchOffers(client: HttpClient, query: String): List<Offer> {
     val response: HttpResponse = client.get(API + "/api/compare") {
         parameter("q", query.trim())
     }
-    if (!response.status.isSuccess()) return emptyList()
+    if (response.status.value !in 200..299) return emptyList()
     val json = Json { ignoreUnknownKeys = true }
     val root = json.decodeFromString<Map<String, kotlinx.serialization.json.JsonElement>>(response.bodyAsText())
     val arr = root["offers"] ?: return emptyList()
-    return json.decodeFromJsonElement(arr)
+    return json.decodeFromJsonElement<List<Offer>>(arr)
 }
 
 @Composable
