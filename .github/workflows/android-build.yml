@@ -9,11 +9,24 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Apply UI redesign
+        run: |
+          python3 tools/apply_ui.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "UI patch already applied"
+          else
+            git add app/src/main/java/com/myretailprice/app/MainActivity.kt
+            git commit -m "Apply cyber UI and working geyser screen [skip ci]"
+            git push
+          fi
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
