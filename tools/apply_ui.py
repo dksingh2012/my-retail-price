@@ -107,7 +107,8 @@ new='''Column(Modifier.padding(10.dp)) {
 s=s.replace(old,new)
 
 # replace ProductSpecPanel with interactive five horizontal boxes
-s=re.sub(r"@Composable\nfun SpecBox\(.*?\n\}\n\n(?=@Composable\nfun ProductSpecPanel)", "", s, flags=re.S)\nstart=s.index("@Composable\nfun ProductSpecPanel")
+s=re.sub(r"@Composable\nfun SpecBox\(.*?\n\}\n\n(?=@Composable\nfun ProductSpecPanel)", "", s, flags=re.S)
+start=s.index("@Composable\nfun ProductSpecPanel")
 end=s.index("@Composable\nfun ExactMatchPanel", start)
 spec=r'''@Composable
 fun SpecBox(category: ProductCategory, label: String, initial: String) {
