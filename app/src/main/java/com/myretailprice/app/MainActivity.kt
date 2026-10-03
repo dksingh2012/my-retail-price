@@ -253,7 +253,7 @@ fun CategoryCard(category: ProductCategory, selected: Boolean, onClick: () -> Un
 }
 
 @Composable
-fun SpecBox(category: ProductCategory, label: String, initial: String) {
+fun SpecBox(category: ProductCategory, label: String, initial: String, outerModifier: Modifier = Modifier) {
     var value by remember(category.name,label) { mutableStateOf(initial) }
     var expanded by remember(category.name,label) { mutableStateOf(false) }
     val options = when(category.name) {
@@ -293,7 +293,7 @@ fun SpecBox(category: ProductCategory, label: String, initial: String) {
             else -> listOf("3★","4★","5★")
         }
     }
-    Box(Modifier.width(112.dp).height(82.dp)) {
+    Box(outerModifier.height(82.dp)) {
         Surface(Modifier.fillMaxSize().clickable { expanded=true }, shape=RoundedCornerShape(13.dp),
             color=CyberPanel2, border=BorderStroke(1.dp,category.color.copy(alpha=.38f))) {
             Column(Modifier.padding(9.dp)) {
@@ -323,13 +323,22 @@ fun ProductSpecPanel(category: ProductCategory) {
     }
     Column {
         Row(verticalAlignment=Alignment.CenterVertically) {
-            Text("PRODUCT SPECIFICATIONS",color=CyberMuted,fontSize=8.sp,fontWeight=FontWeight.Bold,letterSpacing=1.3.sp,fontFamily=FontFamily.Monospace)
+            Text("POPULAR SPECIFICATIONS",color=CyberMuted,fontSize=8.sp,fontWeight=FontWeight.Bold,letterSpacing=1.3.sp,fontFamily=FontFamily.Monospace)
             Spacer(Modifier.weight(1f))
             Text("TAP TO SELECT",color=category.color,fontSize=7.sp,fontFamily=FontFamily.Monospace)
         }
         Spacer(Modifier.height(7.dp))
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(7.dp)) {
-            specs.forEach { (label,value) -> SpecBox(category,label,value) }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            specs.chunked(2).forEach { row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { (label,value) ->
+                        Box(Modifier.weight(1f)) {
+                            SpecBox(category,label,value, Modifier.fillMaxWidth())
+                        }
+                    }
+                    if (row.size == 1) Spacer(Modifier.weight(1f))
+                }
+            }
         }
     }
 }
@@ -434,8 +443,8 @@ fun ExactMatchPanel(
 }
 
 @Composable
-fun GeyserCard(title: String, accent: Color, price: String) {
-    Surface(Modifier.width(220.dp),shape=RoundedCornerShape(18.dp),color=CyberPanel,border=BorderStroke(1.dp,accent.copy(alpha=.65f))) {
+fun GeyserCard(title: String, accent: Color, price: String, onCompare: () -> Unit = {}) {
+    Surface(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp),color=CyberPanel,border=BorderStroke(1.dp,accent.copy(alpha=.65f))) {
         Column(Modifier.padding(10.dp)) {
             ProductArt(categories.first(),Modifier.height(92.dp))
             Text(title,color=CyberText,fontSize=13.sp,fontWeight=FontWeight.ExtraBold)
@@ -451,7 +460,7 @@ fun GeyserCard(title: String, accent: Color, price: String) {
             Spacer(Modifier.height(7.dp))
             Text("FROM  ₹$price",color=CyberText,fontSize=16.sp,fontWeight=FontWeight.ExtraBold)
             Spacer(Modifier.height(7.dp))
-            Button(onClick={},Modifier.fillMaxWidth().height(38.dp),shape=RoundedCornerShape(11.dp),
+            Button(onClick=onCompare,Modifier.fillMaxWidth().height(38.dp),shape=RoundedCornerShape(11.dp),
                 colors=ButtonDefaults.buttonColors(containerColor=Color.Transparent,contentColor=NeonCyan),
                 border=BorderStroke(1.dp,NeonCyan.copy(alpha=.75f))) {
                 Text("Compare prices  →",fontSize=9.sp,fontWeight=FontWeight.Bold)
@@ -522,10 +531,15 @@ fun GeyserScreen(onBack: () -> Unit) {
         }
         Spacer(Modifier.height(7.dp))
 
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal=12.dp),horizontalArrangement=Arrangement.spacedBy(7.dp)) {
-            boxes.forEach { (label,value,opts) ->
-                var expanded by remember(label){mutableStateOf(false)}
-                Box(Modifier.width(116.dp).height(82.dp)) {
+        Column(
+            Modifier.padding(horizontal=12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            boxes.chunked(2).forEach { row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { (label,value,opts) ->
+                        var expanded by remember(label){mutableStateOf(false)}
+                        Box(Modifier.weight(1f).height(82.dp)) {
                     Surface(Modifier.fillMaxSize().clickable{expanded=true},shape=RoundedCornerShape(13.dp),color=CyberPanel2,border=BorderStroke(1.dp,Gold.copy(alpha=.55f))) {
                         Column(Modifier.padding(9.dp)) {
                             Text(label.uppercase(),color=Gold,fontSize=7.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Monospace)
@@ -542,7 +556,9 @@ fun GeyserScreen(onBack: () -> Unit) {
                                 expanded=false
                             })
                         }
+                        }
                     }
+                    if (row.size == 1) Spacer(Modifier.weight(1f))
                 }
             }
         }
@@ -573,10 +589,36 @@ fun GeyserScreen(onBack: () -> Unit) {
             Text("View All  ›",color=CyberMuted,fontSize=9.sp)
         }
         Spacer(Modifier.height(7.dp))
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal=12.dp),horizontalArrangement=Arrangement.spacedBy(9.dp)) {
-            GeyserCard("Orient Aquator Neo",Gold,"7,499")
-            GeyserCard("Bajaj Shield Series",NeonCyan,"7,299")
-            GeyserCard("Havells Adonia",NeonPurple,"8,199")
+        val geysers = listOf(
+            Triple("Orient Aquator Neo", Gold, "7,499"),
+            Triple("Bajaj Shield Series", NeonCyan, "7,299"),
+            Triple("Havells Adonia", NeonPurple, "8,199")
+        )
+        val matchedGeysers = if (!searched) geysers else if (
+            capacity == "15L" && rating == "5★" && power == "2000W" && type == "Storage"
+        ) geysers else emptyList()
+
+        Column(Modifier.padding(horizontal=12.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            if (matchedGeysers.isEmpty()) {
+                Surface(
+                    Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    color = CyberPanel,
+                    border = BorderStroke(1.dp, Gold.copy(alpha=.45f))
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("NO EXACT GEYSER MATCH", color = Gold, fontSize = 11.sp,
+                            fontWeight = FontWeight.ExtraBold, fontFamily = FontFamily.Monospace)
+                        Text("Try changing capacity, rating, power or type.", color = CyberMuted, fontSize = 10.sp)
+                    }
+                }
+            } else {
+                matchedGeysers.forEach { (name, accent, price) ->
+                    GeyserCard(name, accent, price) {
+                        searched = true
+                    }
+                }
+            }
         }
         Spacer(Modifier.height(24.dp))
     }
@@ -633,13 +675,24 @@ fun HighValueHome(onGeyser: () -> Unit) {
         Column(Modifier.padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(10.dp))
             OutlinedTextField(
-                value = "",
-                onValueChange = {},
+                value = query,
+                onValueChange = {
+                    query = it
+                    error = null
+                    offers = emptyList()
+                },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 placeholder = { Text("Search brand, model or product", color = CyberMuted) },
                 leadingIcon = { Text("⌕", color = NeonCyan, fontSize = 25.sp) },
-                trailingIcon = { Text("▣", color = CyberText, fontSize = 18.sp) },
+                trailingIcon = {
+                    Text(
+                        "⌕",
+                        modifier = Modifier.clickable { search() },
+                        color = NeonCyan,
+                        fontSize = 20.sp
+                    )
+                },
                 shape = RoundedCornerShape(15.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = NeonCyan, unfocusedBorderColor = NeonCyan.copy(alpha=.75f),
@@ -647,27 +700,19 @@ fun HighValueHome(onGeyser: () -> Unit) {
                 )
             )
             Spacer(Modifier.height(12.dp))
-            Text("CHOOSE CATEGORY", color = CyberMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold,
-                letterSpacing = 1.5.sp, fontFamily = FontFamily.Monospace)
-            Spacer(Modifier.height(7.dp))
-            CategoryDropdown(selected) { select(it) }
-            Spacer(Modifier.height(10.dp))
             Text("POPULAR CATEGORIES", color = NeonCyan, fontSize = 10.sp, fontWeight = FontWeight.Bold,
                 letterSpacing = 1.3.sp, fontFamily = FontFamily.Monospace)
             Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                categories.take(3).forEach { category ->
-                    CategoryCard(category, selected == category, { select(category) }, Modifier.weight(1f))
+            categories.chunked(2).forEach { row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    row.forEach { category ->
+                        CategoryCard(category, selected == category, { select(category) }, Modifier.weight(1f))
+                    }
+                    if (row.size == 1) Spacer(Modifier.weight(1f))
                 }
+                Spacer(Modifier.height(10.dp))
             }
-            Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                categories.drop(3).forEach { category ->
-                    CategoryCard(category, selected == category, { select(category) }, Modifier.weight(1f))
-                }
-                Spacer(Modifier.weight(1f))
-            }
-            Spacer(Modifier.height(15.dp))
+            Spacer(Modifier.height(6.dp))
             ProductSpecPanel(selected)
             Spacer(Modifier.height(12.dp))
             ExactMatchPanel(query, { query = it }, selected, loading, live, offers, error) { search() }
