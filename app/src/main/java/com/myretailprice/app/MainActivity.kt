@@ -556,8 +556,8 @@ fun GeyserScreen(onBack: () -> Unit) {
                                 expanded=false
                             })
                         }
-                        }
                     }
+                }
                     if (row.size == 1) Spacer(Modifier.weight(1f))
                 }
             }
