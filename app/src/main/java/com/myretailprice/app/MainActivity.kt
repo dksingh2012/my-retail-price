@@ -218,7 +218,7 @@ fun ExactMatchPanel(
             }
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(
-                value = query, onValueChange = onQueryChange, Modifier.fillMaxWidth(), singleLine = true,
+                value = query, onValueChange = onQueryChange, modifier = Modifier.fillMaxWidth(), singleLine = true,
                 label = { Text("Search ${selectedCategory.name.lowercase()} model") },
                 placeholder = { Text(selectedCategory.sample, color = CyberMuted) },
                 shape = RoundedCornerShape(15.dp),
@@ -230,7 +230,7 @@ fun ExactMatchPanel(
             )
             Spacer(Modifier.height(10.dp))
             Button(onClick = onSearch, enabled = query.isNotBlank() && !loading,
-                Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = NeonCyan, contentColor = Color.Black)) {
                 Text(if (loading) "SCANNING..." else "⌕  COMPARE & SHOP",
                     fontWeight = FontWeight.ExtraBold, fontSize = 13.sp, fontFamily = FontFamily.Monospace)
@@ -418,7 +418,7 @@ fun GroceryHome() {
                         letterSpacing = 1.4.sp, fontFamily = FontFamily.Monospace)
                     Text("Keep the original comparison engine.", color = CyberText, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
                     Spacer(Modifier.height(10.dp))
-                    OutlinedTextField(value = query, onValueChange = { query = it }, Modifier.fillMaxWidth(),
+                    OutlinedTextField(value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(),
                         singleLine = true, label = { Text("Grocery item") }, shape = RoundedCornerShape(15.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = NeonGreen, unfocusedBorderColor = Color(0xFF33445E),
@@ -427,7 +427,7 @@ fun GroceryHome() {
                         ))
                     Spacer(Modifier.height(9.dp))
                     Button(onClick = { search() }, enabled = !loading && query.isNotBlank(),
-                        Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = NeonGreen, contentColor = Color.Black)) {
                         Text(if (loading) "SCANNING..." else "COMPARE GROCERY", fontWeight = FontWeight.ExtraBold,
                             fontFamily = FontFamily.Monospace)
