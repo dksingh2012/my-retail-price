@@ -63,6 +63,7 @@ data class ProductCategory(
 )
 
 private val categories = listOf(
+    ProductCategory("♨", "GEYSER", "Capacity & rating", Color(0xFFFFB84D), "Orient Aquator Neo 15L"),
     ProductCategory("▣", "MOBILE", "Phones & variants", NeonCyan, "Samsung Galaxy S25 Ultra"),
     ProductCategory("▤", "TV", "Size & panel", NeonPurple, "Sony Bravia 55 inch 4K"),
     ProductCategory("◫", "AC", "Ton & star rating", NeonGreen, "LG 1.5 Ton 5 Star AC"),
@@ -347,8 +348,7 @@ fun HighValueHome() {
             Spacer(Modifier.height(7.dp))
             CategoryDropdown(selected) { select(it) }
             Spacer(Modifier.height(10.dp))
-            Text("QUICK CATEGORY", color = CyberMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold,
-                letterSpacing = 1.2.sp, fontFamily = FontFamily.Monospace), color = CyberMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold,
+            Text("QUICK CATEGORY", color = CyberMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold,
                 letterSpacing = 1.5.sp, fontFamily = FontFamily.Monospace)
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
