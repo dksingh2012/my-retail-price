@@ -2,6 +2,39 @@ const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"Co
 const json=(x,s=200)=>new Response(JSON.stringify(x),{status:s,headers:CORS});
 const MARKET="Gurugram";
 const PIN="122001";
+const LAT="28.4608858";
+const LON="77.0287664";
+const LIVE_PLATFORMS=["BlinkIt","Zepto","BigBasket","JioMart"];
+
+async function liveSearch(q,pincode,env){
+  if(!env.QUICKCOMMERCE_API_KEY) return {ok:false,error:"QUICKCOMMERCE_API_KEY is not configured"};
+  const url=new URL("https://api.quickcommerceapi.com/v1/groupsearch");
+  url.searchParams.set("q",q);
+  url.searchParams.set("lat",LAT);
+  url.searchParams.set("lon",LON);
+  url.searchParams.set("platforms",LIVE_PLATFORMS.join(","));
+  url.searchParams.set("pincode",pincode);
+  const res=await fetch(url.toString(),{headers:{"X-API-Key":env.QUICKCOMMERCE_API_KEY}});
+  const body=await res.json();
+  if(!res.ok || body.status!=="success") return {ok:false,status:res.status,error:body?.message||body?.error||"QuickCommerce API error"};
+  const offers=[];
+  const results=body?.data?.results||{};
+  for(const [platform,items] of Object.entries(results)){
+    for(const item of (Array.isArray(items)?items:[])){
+      const price=Number(item.offer_price);
+      if(!Number.isFinite(price)) continue;
+      offers.push({
+        id:String(item.id||""),name:String(item.name||q),brand:String(item.brand||""),pack:String(item.quantity||""),
+        retailer:String(item.platform?.name||platform),price,mrp:Number.isFinite(Number(item.mrp))?Number(item.mrp):null,
+        pincode,available:item.available!==false,source:"QuickCommerce API",data_status:"live_authorized",
+        product_url:String(item.deeplink||""),updated_at:new Date().toISOString(),sla:String(item.platform?.sla||"")
+      });
+    }
+  }
+  offers.sort((a,b)=>a.price-b.price);
+  return {ok:true,offers,credits_remaining:body.credits_remaining};
+}
+
 
 const offerSelect=`
 SELECT p.id,p.name,p.pack,p.brand,p.unit_value,p.unit,
@@ -90,6 +123,11 @@ export default {
         const q=(u.searchParams.get("q")||"").trim();
         const pincode=(u.searchParams.get("pincode")||PIN).trim();
         if(!q) return json({error:"q is required"},400);
+        if(env.QUICKCOMMERCE_API_KEY){
+          const live=await liveSearch(q,pincode,env);
+          if(!live.ok) return json({query:q,location:MARKET,pincode,offers:[],cheapest:null,data_status:"live_error",error:live.error},502);
+          return json({query:q,location:MARKET,pincode,offers:live.offers,cheapest:live.offers[0]||null,data_status:"live_authorized",credits_remaining:live.credits_remaining});
+        }
         const r=await env.DB.prepare(
           offerSelect+" WHERE (p.name LIKE ? OR p.brand LIKE ?) AND o.pincode=? AND o.available=1 ORDER BY o.price ASC"
         ).bind("%"+q+"%","%"+q+"%",pincode).all();
