@@ -3,6 +3,7 @@ package com.myretailprice.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,24 +16,35 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.myretailprice.app.R
 import io.ktor.client.*
 import io.ktor.client.engine.android.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.builtins.ListSerializer
 
 private const val API = "https://my-retail-price-api.dksingh2012.workers.dev"
+
+private val CyberBg = Color(0xFF060A12)
+private val CyberPanel = Color(0xFF0C1220)
+private val CyberPanel2 = Color(0xFF111A2B)
+private val NeonCyan = Color(0xFF00E5FF)
+private val NeonPurple = Color(0xFF9B5CFF)
+private val NeonGreen = Color(0xFF39FF88)
+private val CyberText = Color(0xFFE8F7FF)
+private val CyberMuted = Color(0xFF8EA3B8)
 
 @Serializable
 data class Offer(
@@ -45,9 +57,19 @@ data class Offer(
     val pincode: String? = null
 )
 
-data class BasketLine(
-    val query: String,
-    val offer: Offer
+data class ProductCategory(
+    val icon: String,
+    val name: String,
+    val subtitle: String,
+    val color: Color,
+    val sample: String
+)
+
+private val categories = listOf(
+    ProductCategory("▣", "MOBILE", "Phones & variants", NeonCyan, "Samsung Galaxy S25 Ultra"),
+    ProductCategory("▤", "TV", "Size & panel", NeonPurple, "Sony Bravia 55 inch 4K"),
+    ProductCategory("◫", "AC", "Ton & star rating", NeonGreen, "LG 1.5 Ton 5 Star AC"),
+    ProductCategory("▥", "FRIDGE", "Capacity & type", Color(0xFFFFB84D), "LG 655 L Frost Free Refrigerator")
 )
 
 class MainActivity : ComponentActivity() {
@@ -59,16 +81,16 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun App() {
-    val colors = lightColorScheme(
-        primary = Color(0xFF16A34A),
-        onPrimary = Color.White,
-        secondary = Color(0xFFFF6A00),
-        background = Color(0xFFF7FAF8),
-        surface = Color.White,
-        onSurface = Color(0xFF132033)
+    val scheme = darkColorScheme(
+        primary = NeonCyan,
+        onPrimary = Color.Black,
+        secondary = NeonPurple,
+        background = CyberBg,
+        surface = CyberPanel,
+        onSurface = CyberText
     )
-    MaterialTheme(colorScheme = colors) {
-        Surface(modifier = Modifier.fillMaxSize()) { GroceryHome() }
+    MaterialTheme(colorScheme = scheme) {
+        Surface(Modifier.fillMaxSize(), color = CyberBg) { MainHome() }
     }
 }
 
@@ -78,66 +100,188 @@ suspend fun fetchOffers(client: HttpClient, query: String): List<Offer> {
     }
     if (response.status.value !in 200..299) return emptyList()
     val json = Json { ignoreUnknownKeys = true }
-    val root = json.decodeFromString<Map<String, kotlinx.serialization.json.JsonElement>>(response.bodyAsText())
+    val root = json.decodeFromString<Map<String, JsonElement>>(response.bodyAsText())
     val arr = root["offers"] ?: return emptyList()
     return json.decodeFromJsonElement(ListSerializer(Offer.serializer()), arr)
 }
 
 @Composable
-fun BrandHeader() {
-    Row(Modifier.fillMaxWidth().background(Color(0xFF08743A)).padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(74.dp).clip(RoundedCornerShape(18.dp)).background(Color.White).padding(4.dp),
-            contentAlignment = Alignment.Center) {
-            Image(painterResource(R.drawable.my_retail_price_logo), "MY RETAIL PRICE logo",
-                Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+fun CyberHeader() {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(Brush.horizontalGradient(listOf(Color(0xFF081523), Color(0xFF140A26), Color(0xFF07131D))))
+            .padding(horizontal = 18.dp, vertical = 16.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(58.dp).clip(RoundedCornerShape(16.dp))
+                    .background(Color.White).padding(4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painterResource(R.drawable.my_retail_price_logo),
+                    "MY RETAIL PRICE logo",
+                    Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Fit
+                )
+            }
+            Spacer(Modifier.width(11.dp))
+            Column(Modifier.weight(1f)) {
+                Text("MY RETAIL PRICE", color = CyberText, fontSize = 20.sp,
+                    fontWeight = FontWeight.ExtraBold, fontFamily = FontFamily.Monospace)
+                Text("COMPARE & SHOP", color = NeonCyan, fontSize = 11.sp,
+                    letterSpacing = 2.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+            }
+            Surface(shape = RoundedCornerShape(14.dp), color = NeonCyan.copy(alpha = .12f),
+                border = BorderStroke(1.dp, NeonCyan.copy(alpha = .45f))) {
+                Text("122001", Modifier.padding(horizontal = 9.dp, vertical = 7.dp),
+                    color = NeonCyan, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            }
         }
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text("MY RETAIL PRICE", color = Color.White, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold)
-            Text("Compare Prices • Save More", color = Color(0xFFDDF7E6), fontSize = 12.sp)
-        }
-        Text("⚙", color = Color.White, fontSize = 24.sp)
+        Spacer(Modifier.height(14.dp))
+        Text("Find the exact product.\nCompare the real price.", color = CyberText,
+            fontSize = 27.sp, lineHeight = 32.sp, fontWeight = FontWeight.ExtraBold)
+        Spacer(Modifier.height(5.dp))
+        Text("Built for phones, TVs, ACs & refrigerators — model by model.",
+            color = CyberMuted, fontSize = 12.sp)
     }
 }
 
 @Composable
-fun RetailerStrip() {
-    val retailers = listOf("B" to "Blinkit", "Z" to "Zepto", "b" to "BigBasket", "J" to "JioMart")
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)) {
-        Column {
-            Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-                retailers.forEachIndexed { index, pair ->
-                    val bg = listOf(Color(0xFFFFC400), Color(0xFF5B16A6), Color(0xFFB6D800), Color(0xFF1749C7))[index]
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                        Box(Modifier.size(46.dp).clip(RoundedCornerShape(13.dp)).background(bg), contentAlignment = Alignment.Center) {
-                            Text(pair.first, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
-                        }
-                        Spacer(Modifier.height(4.dp))
-                        Text(pair.second, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF10213B))
+fun ModeSwitch(highValue: Boolean, onChange: (Boolean) -> Unit) {
+    Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = CyberPanel,
+        border = BorderStroke(1.dp, Color(0xFF24334A))) {
+        Row(Modifier.padding(4.dp)) {
+            listOf("HIGH-VALUE" to true, "GROCERY" to false).forEach { item ->
+                val selected = highValue == item.second
+                Surface(
+                    Modifier.weight(1f).clickable { onChange(item.second) },
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (selected) NeonCyan.copy(alpha = .16f) else Color.Transparent,
+                    border = if (selected) BorderStroke(1.dp, NeonCyan.copy(alpha = .55f)) else null
+                ) {
+                    Text(item.first, Modifier.padding(vertical = 10.dp), textAlign = TextAlign.Center,
+                        color = if (selected) NeonCyan else CyberMuted, fontSize = 10.sp,
+                        fontWeight = FontWeight.ExtraBold, fontFamily = FontFamily.Monospace)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CategoryCard(category: ProductCategory, selected: Boolean, onClick: () -> Unit) {
+    Surface(Modifier.width(142.dp).clickable { onClick() }, shape = RoundedCornerShape(18.dp),
+        color = if (selected) category.color.copy(alpha = .12f) else CyberPanel,
+        border = BorderStroke(1.dp, if (selected) category.color.copy(alpha = .85f) else Color(0xFF233149))) {
+        Column(Modifier.padding(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(category.icon, color = category.color, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.weight(1f))
+                if (selected) Text("●", color = category.color, fontSize = 9.sp)
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(category.name, color = CyberText, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
+                fontFamily = FontFamily.Monospace)
+            Text(category.subtitle, color = CyberMuted, fontSize = 9.sp)
+        }
+    }
+}
+
+@Composable
+fun ExactMatchPanel(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    selectedCategory: ProductCategory,
+    loading: Boolean,
+    live: Boolean,
+    offers: List<Offer>,
+    error: String?,
+    onSearch: () -> Unit
+) {
+    Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp), color = CyberPanel,
+        border = BorderStroke(1.dp, Color(0xFF26364F))) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("EXACT PRODUCT MATCH", color = NeonCyan, fontSize = 11.sp,
+                        fontWeight = FontWeight.ExtraBold, letterSpacing = 1.4.sp, fontFamily = FontFamily.Monospace)
+                    Text("Brand + model + variant", color = CyberText, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold)
+                }
+                Surface(shape = RoundedCornerShape(12.dp), color = NeonGreen.copy(alpha = .10f),
+                    border = BorderStroke(1.dp, NeonGreen.copy(alpha = .4f))) {
+                    Text(if (live) "LIVE" else "READY", Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                        color = if (live) NeonGreen else CyberMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = query, onValueChange = onQueryChange, Modifier.fillMaxWidth(), singleLine = true,
+                label = { Text("Search ${selectedCategory.name.lowercase()} model") },
+                placeholder = { Text(selectedCategory.sample, color = CyberMuted) },
+                shape = RoundedCornerShape(15.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = NeonCyan, unfocusedBorderColor = Color(0xFF33445E),
+                    focusedLabelColor = NeonCyan, unfocusedLabelColor = CyberMuted,
+                    focusedTextColor = CyberText, unfocusedTextColor = CyberText, cursorColor = NeonCyan
+                )
+            )
+            Spacer(Modifier.height(10.dp))
+            Button(onClick = onSearch, enabled = query.isNotBlank() && !loading,
+                Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = NeonCyan, contentColor = Color.Black)) {
+                Text(if (loading) "SCANNING..." else "⌕  COMPARE & SHOP",
+                    fontWeight = FontWeight.ExtraBold, fontSize = 13.sp, fontFamily = FontFamily.Monospace)
+            }
+            Spacer(Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                listOf("EXACT MATCH", "REAL PRICE", "PRICE HISTORY").forEach {
+                    Surface(shape = RoundedCornerShape(9.dp), color = Color(0xFF111C2D),
+                        border = BorderStroke(1.dp, Color(0xFF2C405D))) {
+                        Text(it, Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            color = CyberMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
                     }
                 }
             }
-            Row(Modifier.fillMaxWidth().background(Color(0xFFEAF8EF)).padding(vertical = 9.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly) {
-                Text("⚡ Live Prices", color = Color(0xFF08743A), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                Text("✓ Real-time Compare", color = Color(0xFF08743A), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                Text("🏷 Best Deals", color = Color(0xFF08743A), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            if (error != null) {
+                Spacer(Modifier.height(12.dp))
+                Surface(shape = RoundedCornerShape(13.dp), color = Color(0xFF25151B),
+                    border = BorderStroke(1.dp, Color(0xFF6E2C3B))) {
+                    Text(error, Modifier.fillMaxWidth().padding(11.dp), color = Color(0xFFFF9BAE), fontSize = 10.sp)
+                }
             }
-        }
-    }
-}
-
-@Composable
-fun BottomNav() {
-    Surface(color = Color.White, shadowElevation = 8.dp) {
-        Row(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-            listOf("⌂" to "Home", "▥" to "History", "♡" to "Saved", "⚙" to "Settings").forEachIndexed { index, item ->
-                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(item.first, fontSize = 21.sp, color = if (index == 0) Color(0xFF16A34A) else Color(0xFF59616B))
-                    Text(item.second, fontSize = 10.sp, fontWeight = if (index == 0) FontWeight.Bold else FontWeight.Normal,
-                        color = if (index == 0) Color(0xFF08743A) else Color(0xFF59616B))
+            if (offers.isNotEmpty()) {
+                Spacer(Modifier.height(14.dp))
+                Text("RETAILER SCAN", color = NeonPurple, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.2.sp, fontFamily = FontFamily.Monospace)
+                offers.take(8).forEachIndexed { index, offer ->
+                    Surface(Modifier.fillMaxWidth().padding(top = 7.dp), shape = RoundedCornerShape(14.dp),
+                        color = if (index == 0) NeonGreen.copy(alpha = .08f) else CyberPanel2,
+                        border = BorderStroke(1.dp, if (index == 0) NeonGreen.copy(alpha = .45f) else Color(0xFF26364F))) {
+                        Row(Modifier.padding(11.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(offer.retailer ?: "Retailer",
+                                    color = if (index == 0) NeonGreen else CyberText, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold)
+                                Text("${offer.name ?: query} ${offer.pack ?: ""}".trim(), color = CyberMuted, fontSize = 9.sp, maxLines = 2)
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                if (index == 0) Text("LOWEST", color = NeonGreen, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                Text("₹${"%.0f".format(offer.price ?: 0.0)}", color = CyberText, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold)
+                            }
+                        }
+                    }
+                }
+            } else if (!loading) {
+                Spacer(Modifier.height(14.dp))
+                Surface(shape = RoundedCornerShape(14.dp), color = Color(0xFF101A2A),
+                    border = BorderStroke(1.dp, Color(0xFF26364F))) {
+                    Column(Modifier.padding(12.dp)) {
+                        Text("MATCH ENGINE READY", color = NeonCyan, fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraBold, fontFamily = FontFamily.Monospace)
+                        Text("Retailer feeds for ${selectedCategory.name.lowercase()} will plug into this exact-match screen. No price is shown as live until a verified feed is connected.",
+                            color = CyberMuted, fontSize = 10.sp)
+                    }
                 }
             }
         }
@@ -145,24 +289,25 @@ fun BottomNav() {
 }
 
 @Composable
-fun GroceryHome() {
-    var query by remember { mutableStateOf("milk") }
+fun HighValueHome() {
+    var selected by remember { mutableStateOf(categories.first()) }
+    var query by remember { mutableStateOf(categories.first().sample) }
     var offers by remember { mutableStateOf<List<Offer>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var live by remember { mutableStateOf(false) }
 
-    var basketInput by remember { mutableStateOf("milk, atta, salt") }
-    var basketLoading by remember { mutableStateOf(false) }
-    var basketLines by remember { mutableStateOf<List<BasketLine>>(emptyList()) }
-    var basketMissing by remember { mutableStateOf<List<String>>(emptyList()) }
-    var basketSplitTotal by remember { mutableStateOf<Double?>(null) }
-    var basketSingleRetailer by remember { mutableStateOf<String?>(null) }
-    var basketSingleTotal by remember { mutableStateOf<Double?>(null) }
-
     val client = remember { HttpClient(Android) { expectSuccess = false } }
     val scope = rememberCoroutineScope()
     DisposableEffect(Unit) { onDispose { client.close() } }
+
+    fun select(category: ProductCategory) {
+        selected = category
+        query = category.sample
+        offers = emptyList()
+        error = null
+        live = false
+    }
 
     fun search() {
         if (query.isBlank()) return
@@ -173,250 +318,173 @@ fun GroceryHome() {
             try {
                 val result = fetchOffers(client, query)
                 offers = result
-                live = true
-                if (offers.isEmpty()) error = "No matching offers found. Try milk, atta or rice."
+                live = result.isNotEmpty()
+                if (result.isEmpty()) error = "No verified retailer match yet for this model. The exact-match screen is ready for high-value feeds."
             } catch (e: Exception) {
                 live = false
-                error = e.message ?: "Unable to reach the live price service."
+                error = "Live comparison is not available for this category yet."
             } finally {
                 loading = false
             }
         }
     }
 
-    fun compareBasket() {
-        val items = basketInput.split(",").map { it.trim() }.filter { it.isNotBlank() }.distinct().take(10)
-        if (items.isEmpty()) return
-        basketLoading = true
-        basketLines = emptyList()
-        basketMissing = emptyList()
-        basketSplitTotal = null
-        basketSingleRetailer = null
-        basketSingleTotal = null
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).background(CyberBg)) {
+        CyberHeader()
+        Column(Modifier.padding(horizontal = 16.dp)) {
+            Spacer(Modifier.height(12.dp))
+            Text("MODE", color = CyberMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                letterSpacing = 1.5.sp, fontFamily = FontFamily.Monospace)
+            Spacer(Modifier.height(6.dp))
+            ModeSwitch(true) {}
+            Spacer(Modifier.height(17.dp))
+            Text("CHOOSE CATEGORY", color = CyberMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                letterSpacing = 1.5.sp, fontFamily = FontFamily.Monospace)
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                categories.forEach { category -> CategoryCard(category, selected == category) { select(category) } }
+            }
+            Spacer(Modifier.height(15.dp))
+            ExactMatchPanel(query, { query = it }, selected, loading, live, offers, error) { search() }
+            Spacer(Modifier.height(15.dp))
+            Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp), color = Color(0xFF0A111D),
+                border = BorderStroke(1.dp, NeonPurple.copy(alpha = .35f))) {
+                Row(Modifier.padding(13.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("◆", color = NeonPurple, fontSize = 18.sp)
+                    Spacer(Modifier.width(10.dp))
+                    Column {
+                        Text("WHY MY RETAIL PRICE?", color = CyberText, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
+                            fontFamily = FontFamily.Monospace)
+                        Text("Same model first — then price. Similar products are kept separate.", color = CyberMuted, fontSize = 9.sp)
+                    }
+                }
+            }
+            Spacer(Modifier.height(15.dp))
+            Text("COMING INTO THE ENGINE", color = CyberMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                letterSpacing = 1.5.sp, fontFamily = FontFamily.Monospace)
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("EXACT MATCH" to NeonCyan, "EFFECTIVE PRICE" to NeonGreen, "PRICE HISTORY" to NeonPurple).forEach {
+                    Surface(Modifier.weight(1f), shape = RoundedCornerShape(13.dp), color = it.second.copy(alpha = .08f),
+                        border = BorderStroke(1.dp, it.second.copy(alpha = .35f))) {
+                        Text(it.first, Modifier.padding(vertical = 11.dp), textAlign = TextAlign.Center,
+                            color = it.second, fontSize = 8.sp, fontWeight = FontWeight.ExtraBold, fontFamily = FontFamily.Monospace)
+                    }
+                }
+            }
+            Spacer(Modifier.height(18.dp))
+        }
+    }
+}
+
+@Composable
+fun GroceryHome() {
+    var query by remember { mutableStateOf("milk") }
+    var offers by remember { mutableStateOf<List<Offer>>(emptyList()) }
+    var loading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val client = remember { HttpClient(Android) { expectSuccess = false } }
+    val scope = rememberCoroutineScope()
+    DisposableEffect(Unit) { onDispose { client.close() } }
+
+    fun search() {
+        loading = true
+        error = null
+        offers = emptyList()
         scope.launch {
             try {
-                val results = items.map { item -> item to fetchOffers(client, item) }
-                val missing = results.filter { it.second.isEmpty() }.map { it.first }
-                val matched = results.filter { it.second.isNotEmpty() }
-                val lines = matched.map { (item, itemOffers) ->
-                    BasketLine(item, itemOffers.minByOrNull { it.price ?: Double.MAX_VALUE }!!)
-                }
-                basketLines = lines
-                basketMissing = missing
-                basketSplitTotal = lines.sumOf { it.offer.price ?: 0.0 }
-
-                val retailers = lines.mapNotNull { it.offer.retailer }.distinct()
-                var bestRetailer: String? = null
-                var bestTotal = Double.MAX_VALUE
-                for (retailer in retailers) {
-                    var complete = true
-                    var total = 0.0
-                    for ((_, itemOffers) in matched) {
-                        val offer = itemOffers.firstOrNull { it.retailer == retailer }
-                        if (offer == null) { complete = false; break }
-                        total += offer.price ?: 0.0
-                    }
-                    if (complete && total < bestTotal) {
-                        bestTotal = total
-                        bestRetailer = retailer
-                    }
-                }
-                basketSingleRetailer = bestRetailer
-                basketSingleTotal = if (bestRetailer != null) bestTotal else null
+                offers = fetchOffers(client, query)
+                if (offers.isEmpty()) error = "No matching grocery offer found."
             } catch (e: Exception) {
-                error = e.message ?: "Basket comparison failed."
+                error = "Unable to reach the live grocery price service."
             } finally {
-                basketLoading = false
+                loading = false
             }
         }
     }
 
     val cheapest = offers.minByOrNull { it.price ?: Double.MAX_VALUE }
 
-    Column(Modifier.fillMaxSize().background(Color(0xFFF5F9F6)).verticalScroll(rememberScrollState())) {
-        BrandHeader()
-        Column(Modifier.padding(horizontal = 16.dp)) {
-            Spacer(Modifier.height(12.dp))
-            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                Row(Modifier.fillMaxWidth().padding(15.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("📍", fontSize = 27.sp)
-                    Spacer(Modifier.width(9.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text("Gurugram", color = Color(0xFF10213B), fontSize = 19.sp, fontWeight = FontWeight.ExtraBold)
-                        Text("PIN 122001", color = Color(0xFF657180), fontSize = 12.sp)
-                    }
-                    Surface(shape = RoundedCornerShape(14.dp), color = Color(0xFFEAF8EF)) {
-                        Text("✓ Service area", Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                            color = Color(0xFF08743A), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(12.dp))
-            RetailerStrip()
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).background(CyberBg)) {
+        CyberHeader()
+        Column(Modifier.padding(16.dp)) {
+            ModeSwitch(false) {}
             Spacer(Modifier.height(14.dp))
-
-            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp), color = CyberPanel,
+                border = BorderStroke(1.dp, Color(0xFF26364F))) {
                 Column(Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("⌕", color = Color(0xFF10213B), fontSize = 34.sp, fontWeight = FontWeight.Bold)
-                        Spacer(Modifier.width(8.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text("Compare one item", color = Color(0xFF10213B), fontSize = 23.sp, fontWeight = FontWeight.ExtraBold)
-                            Text("Search and compare prices across retailers.", color = Color(0xFF586575), fontSize = 12.sp)
-                        }
-                        if (live) {
-                            Surface(shape = RoundedCornerShape(18.dp), color = Color(0xFFEAF8EF)) {
-                                Text("● LIVE", Modifier.padding(horizontal = 9.dp, vertical = 7.dp),
-                                    color = Color(0xFF08743A), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
-                            }
-                        }
-                    }
-
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(),
-                        singleLine = true, leadingIcon = { Text("⌕", fontSize = 24.sp) },
-                        placeholder = { Text("Milk, atta, rice, oil...") },
-                        label = { Text("What do you want to compare?") },
-                        shape = RoundedCornerShape(16.dp)
-                    )
+                    Text("QUICK GROCERY", color = NeonGreen, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.4.sp, fontFamily = FontFamily.Monospace)
+                    Text("Keep the original comparison engine.", color = CyberText, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
                     Spacer(Modifier.height(10.dp))
-                    Button(
-                        onClick = { search() }, enabled = query.isNotBlank() && !loading,
-                        modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Text(if (loading) "CHECKING PRICES..." else "⌕  COMPARE PRICES",
-                            fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
+                    OutlinedTextField(value = query, onValueChange = { query = it }, Modifier.fillMaxWidth(),
+                        singleLine = true, label = { Text("Grocery item") }, shape = RoundedCornerShape(15.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = NeonGreen, unfocusedBorderColor = Color(0xFF33445E),
+                            focusedLabelColor = NeonGreen, unfocusedLabelColor = CyberMuted,
+                            focusedTextColor = CyberText, unfocusedTextColor = CyberText, cursorColor = NeonGreen
+                        ))
+                    Spacer(Modifier.height(9.dp))
+                    Button(onClick = { search() }, enabled = !loading && query.isNotBlank(),
+                        Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = NeonGreen, contentColor = Color.Black)) {
+                        Text(if (loading) "SCANNING..." else "COMPARE GROCERY", fontWeight = FontWeight.ExtraBold,
+                            fontFamily = FontFamily.Monospace)
                     }
-
-                    Spacer(Modifier.height(11.dp))
-                    Text("Popular searches", color = Color(0xFF586575), fontSize = 12.sp)
-                    Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf("milk", "atta", "rice", "oil").forEach { item ->
-                            Surface(Modifier.weight(1f).clickable { query = item; search() },
-                                shape = RoundedCornerShape(20.dp), color = Color(0xFFEAF8EF)) {
-                                Text(item, Modifier.padding(vertical = 9.dp),
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                    color = Color(0xFF08743A), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-
                     if (error != null) {
-                        Spacer(Modifier.height(12.dp))
-                        Surface(shape = RoundedCornerShape(14.dp), color = Color(0xFFFFECEB)) {
-                            Column(Modifier.padding(12.dp)) {
-                                Text("Live price connection needs attention", color = Color(0xFF9C241D),
-                                    fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                                Text(error!!, color = Color(0xFF9C241D), fontSize = 11.sp)
-                            }
-                        }
+                        Spacer(Modifier.height(10.dp))
+                        Text(error!!, color = Color(0xFFFF9BAE), fontSize = 10.sp)
                     }
-
                     if (cheapest != null) {
                         Spacer(Modifier.height(12.dp))
-                        Surface(shape = RoundedCornerShape(16.dp), color = Color(0xFFEAF8EF)) {
-                            Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) {
-                                    Text("LOWEST PRICE FOUND", color = Color(0xFF08743A), fontWeight = FontWeight.ExtraBold, fontSize = 10.sp)
-                                    Text(cheapest.retailer ?: "Retailer", color = Color(0xFF10213B), fontWeight = FontWeight.Bold)
-                                }
-                                Text("₹${"%.0f".format(cheapest.price ?: 0.0)}", color = Color(0xFF10213B), fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
-                            }
-                        }
+                        Text("LOWEST FOUND  •  ${cheapest.retailer ?: "Retailer"}  •  ₹${"%.0f".format(cheapest.price ?: 0.0)}",
+                            color = NeonGreen, fontWeight = FontWeight.ExtraBold, fontSize = 11.sp)
                     }
-
-                    if (offers.isNotEmpty()) {
-                        Spacer(Modifier.height(10.dp))
-                        Text("Retailer offers", color = Color(0xFF10213B), fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
-                        offers.take(8).forEach { offer ->
-                            Row(Modifier.fillMaxWidth().padding(vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(offer.retailer ?: "Retailer", color = Color(0xFF10213B), fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                    Text("${offer.name ?: query} ${offer.pack ?: ""}".trim(), color = Color(0xFF657180), fontSize = 10.sp)
-                                }
-                                Text("₹${"%.0f".format(offer.price ?: 0.0)}", color = Color(0xFF10213B), fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+                    offers.take(8).forEach { offer ->
+                        Row(Modifier.fillMaxWidth().padding(vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(offer.retailer ?: "Retailer", color = CyberText, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Text("${offer.name ?: query} ${offer.pack ?: ""}".trim(), color = CyberMuted, fontSize = 9.sp)
                             }
-                            HorizontalDivider(color = Color(0xFFE9EEF0))
+                            Text("₹${"%.0f".format(offer.price ?: 0.0)}", color = NeonCyan, fontWeight = FontWeight.ExtraBold)
                         }
+                        HorizontalDivider(color = Color(0xFF233149))
                     }
                 }
             }
-
             Spacer(Modifier.height(14.dp))
-            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFBF5))) {
-                Column(Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("🛒", fontSize = 28.sp)
-                        Spacer(Modifier.width(8.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text("Smart Basket", color = Color(0xFF10213B), fontSize = 23.sp, fontWeight = FontWeight.ExtraBold)
-                            Text("Compare one store vs a split basket.", color = Color(0xFF586575), fontSize = 12.sp)
-                        }
-                        Surface(shape = RoundedCornerShape(18.dp), color = Color(0xFFEAF8EF)) {
-                            Text("Save More", Modifier.padding(horizontal = 9.dp, vertical = 7.dp),
-                                color = Color(0xFF08743A), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                    Spacer(Modifier.height(11.dp))
-                    OutlinedTextField(value = basketInput, onValueChange = { basketInput = it },
-                        modifier = Modifier.fillMaxWidth(), minLines = 2, label = { Text("Basket items") },
-                        placeholder = { Text("e.g. milk, atta, salt") }, shape = RoundedCornerShape(16.dp))
-                    Spacer(Modifier.height(9.dp))
-                    Button(onClick = { compareBasket() }, enabled = !basketLoading && basketInput.isNotBlank(),
-                        modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6A00))) {
-                        Text(if (basketLoading) "CALCULATING..." else "🛒  COMPARE MY BASKET",
-                            fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
-                    }
+            Text("Gurugram • PIN 122001 • Existing grocery/live comparison retained.", color = CyberMuted,
+                fontSize = 9.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+        }
+    }
+}
 
-                    if (basketSplitTotal != null) {
-                        Spacer(Modifier.height(11.dp))
-                        Surface(shape = RoundedCornerShape(16.dp), color = Color(0xFFEAF8EF)) {
-                            Column(Modifier.fillMaxWidth().padding(13.dp)) {
-                                Text("CHEAPEST SPLIT BASKET", color = Color(0xFF08743A), fontWeight = FontWeight.ExtraBold, fontSize = 10.sp)
-                                Text("₹${"%.0f".format(basketSplitTotal)}", color = Color(0xFF10213B), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
-                            }
-                        }
-                        Spacer(Modifier.height(7.dp))
-                        Surface(shape = RoundedCornerShape(16.dp), color = Color.White) {
-                            Column(Modifier.fillMaxWidth().padding(13.dp)) {
-                                Text("CHEAPEST SINGLE STORE", color = Color(0xFF10213B), fontWeight = FontWeight.ExtraBold, fontSize = 10.sp)
-                                if (basketSingleRetailer != null && basketSingleTotal != null) {
-                                    Text(basketSingleRetailer!!, color = Color(0xFF10213B), fontWeight = FontWeight.Bold)
-                                    Text("₹${"%.0f".format(basketSingleTotal)}", color = Color(0xFF10213B), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
-                                } else {
-                                    Text("No single retailer has every matched item.", color = Color(0xFF657180), fontSize = 11.sp)
-                                }
-                            }
-                        }
-                        basketLines.forEach { line ->
-                            Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(line.query, color = Color(0xFF10213B), fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                                    Text(line.offer.retailer ?: "Retailer", color = Color(0xFF657180), fontSize = 10.sp)
-                                }
-                                Text("₹${"%.0f".format(line.offer.price ?: 0.0)}", color = Color(0xFF10213B), fontWeight = FontWeight.ExtraBold)
-                            }
-                        }
-                        if (basketMissing.isNotEmpty()) {
-                            Text("Not found: ${basketMissing.joinToString(", ")}", color = Color(0xFF9C241D), fontSize = 10.sp)
-                        }
-                    }
+@Composable
+fun MainHome() {
+    var highValue by remember { mutableStateOf(true) }
+    if (highValue) {
+        Column(Modifier.fillMaxSize()) {
+            HighValueHome()
+            Surface(color = CyberPanel, shadowElevation = 12.dp) {
+                Row(Modifier.fillMaxWidth().padding(9.dp)) {
+                    Text("⌂  HIGH-VALUE", Modifier.weight(1f), color = NeonCyan, fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center, fontFamily = FontFamily.Monospace)
+                    Text("▣  GROCERY", Modifier.weight(1f).clickable { highValue = false }, color = CyberMuted, fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, fontFamily = FontFamily.Monospace)
                 }
             }
-
-            Spacer(Modifier.height(12.dp))
-            Surface(shape = RoundedCornerShape(14.dp), color = Color(0xFFEAF4FF)) {
-                Text("Live price comparison is connected for Gurugram (122001). Results depend on the connected price service and retailer availability.",
-                    Modifier.fillMaxWidth().padding(11.dp), color = Color(0xFF135EA8), fontSize = 10.sp)
-            }
-            Spacer(Modifier.height(12.dp))
         }
-        BottomNav()
+    } else {
+        Column(Modifier.fillMaxSize()) {
+            GroceryHome()
+            Surface(color = CyberPanel, shadowElevation = 12.dp) {
+                Row(Modifier.fillMaxWidth().padding(9.dp)) {
+                    Text("⌂  HIGH-VALUE", Modifier.weight(1f).clickable { highValue = true }, color = NeonCyan, fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, fontFamily = FontFamily.Monospace)
+                    Text("▣  GROCERY", Modifier.weight(1f), color = NeonGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center, fontFamily = FontFamily.Monospace)
+                }
+            }
+        }
     }
 }
