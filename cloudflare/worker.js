@@ -11,7 +11,7 @@ const LIVE_PLATFORMS=["BlinkIt","Zepto","BigBasket","JioMart","Amazon","Flipkart
 // irrelevant matches locally. All query terms must match the product text.
 // A numeric size token such as "200ml" is treated as a preference rather than
 // a hard requirement so products with equivalent pack formatting are retained.
-function filterRelevantOffers(offers,q){
+// Normalize electronics identifiers from retailer titles for exact-match scoring.\nfunction normalizeProductIdentity(o){\n  const raw=[o.brand,o.name,o.pack].filter(Boolean).join(" ");\n  const text=raw.toLowerCase().replace(/[^a-z0-9.\-+/ ]+/g," ");\n  const modelTokens=(text.match(/\\b[a-z]{1,6}[-/]?\\d{2,}[a-z0-9/-]*\\b/gi)||[]).map(x=>x.toLowerCase());\n  const capacity=(text.match(/\\b\\d+(?:\\.\\d+)?\\s*(?:l|litre|liter|kg|g|ml|inch|in|ton|tb|gb|mb)\\b/gi)||[]).map(x=>x.replace(/\\s+/g,""));\n  return {...o,identity:{brand:String(o.brand||"").toLowerCase().trim(),models:[...new Set(modelTokens)],capacity:[...new Set(capacity)]}};\n}\n\nfunction filterRelevantOffers(offers,q){
   const tokens=q.toLowerCase().replace(/[^a-z0-9.]+/g," ").trim().split(/\\s+/).filter(Boolean);
   if(!tokens.length) return offers;
   const scored=offers.map(o=>{
@@ -64,7 +64,7 @@ async function liveSearch(q,pincode,env){
       });
     }
   }
-  const relevantOffers=filterRelevantOffers(offers,q);
+  const normalizedOffers=offers.map(normalizeProductIdentity);\n  const relevantOffers=filterRelevantOffers(normalizedOffers,q);
   relevantOffers.sort((a,b)=>a.price-b.price);
   return {ok:true,offers:relevantOffers,credits_remaining:body.credits_remaining};
 }
