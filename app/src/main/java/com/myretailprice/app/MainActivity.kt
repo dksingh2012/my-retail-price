@@ -7,6 +7,7 @@ import java.net.URL
 import java.net.URLEncoder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
@@ -43,7 +44,6 @@ private val Green=Color(0xFF37F58A)
 private val Gold=Color(0xFFFFC95C)
 private val White=Color(0xFFF2F7FB)
 private val Muted=Color(0xFF9BAEC2)
-
 
 private data class LiveOffer(
  val retailer:String,val name:String,val brand:String,val price:Double,val mrp:Double?,
@@ -309,3 +309,73 @@ class MainActivity:ComponentActivity(){
  }
 }
 
+@Composable private fun GenericCategoryScreen(category:String,onBack:()->Unit){
+ var found by remember{mutableStateOf(false)}
+ val title=when(category){"MOBILE"->"MOBILE";"TV"->"TV";"AC"->"AIR CONDITIONER";"FRIDGE"->"REFRIGERATOR";else->category}
+ val specs=when(category){
+  "MOBILE"->listOf("Brand" to listOf("Apple","Samsung","OnePlus","Xiaomi"),"Model" to listOf("Galaxy S25 Ultra","iPhone 17","OnePlus 13"),"RAM" to listOf("8GB","12GB","16GB"),"Storage" to listOf("128GB","256GB","512GB"),"Variant" to listOf("Black","Blue","Silver"))
+  "TV"->listOf("Brand" to listOf("Sony","Samsung","LG","TCL"),"Size" to listOf("43 inch","50 inch","55 inch","65 inch"),"Panel" to listOf("LED","QLED","OLED"),"Resolution" to listOf("4K","Full HD"),"Refresh" to listOf("60Hz","120Hz"))
+  "AC"->listOf("Brand" to listOf("Daikin","LG","Voltas","Carrier"),"Capacity" to listOf("1 Ton","1.5 Ton","2 Ton"),"Star Rating" to listOf("3★","4★","5★"),"Type" to listOf("Split","Window"),"Inverter" to listOf("Inverter","Non-Inverter"))
+  else->listOf("Brand" to listOf("LG","Samsung","Whirlpool","Haier"),"Capacity" to listOf("190L","240L","300L","350L"),"Type" to listOf("Double Door","Single Door"),"Star Rating" to listOf("2★","3★","4★","5★"),"Compressor" to listOf("Inverter","Digital Inverter"))
+ }
+ var values by remember{mutableStateOf(specs.associate{it.first to it.second.first()})}
+ Column(Modifier.fillMaxSize().background(Bg).verticalScroll(rememberScrollState())){
+  Row(Modifier.fillMaxWidth().padding(17.dp),verticalAlignment=Alignment.CenterVertically){
+   Text("‹",Modifier.clickable{onBack()},color=Cyan,fontSize=40.sp);Spacer(Modifier.width(6.dp))
+   Column(Modifier.weight(1f)){Text(title,color=White,fontSize=27.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace);Text("C O M P A R E  &  S H O P",color=Cyan,fontSize=9.sp,letterSpacing=2.5.sp,fontFamily=FontFamily.Monospace)}
+   Surface(shape=RoundedCornerShape(16.dp),color=Color(0xFF071A2A),border=BorderStroke(1.dp,Cyan)){Column(Modifier.padding(9.dp),horizontalAlignment=Alignment.CenterHorizontally){Text("Gurugram",color=White,fontSize=9.sp);Text("122001",color=Cyan,fontSize=10.sp)}}
+  }
+  Column(Modifier.padding(horizontal=14.dp)){
+   Surface(Modifier.fillMaxWidth(),shape=RoundedCornerShape(22.dp),color=Panel,border=BorderStroke(1.3.dp,Cyan.copy(.5f))){
+    Row(Modifier.padding(16.dp),verticalAlignment=Alignment.CenterVertically){
+     Column(Modifier.weight(1f)){Text("FIND YOUR",color=White,fontSize=23.sp,fontWeight=FontWeight.Black);Text(title,color=Cyan,fontSize=23.sp,fontWeight=FontWeight.Black);Spacer(Modifier.height(7.dp));Text("Select specifications to find the exact model.",color=Muted,fontSize=10.sp,lineHeight=18.sp)}
+     Art(when(category){"MOBILE"->cats[1];"TV"->cats[2];"AC"->cats[3];else->cats[4]},Modifier.weight(.8f).height(125.dp))
+    }
+   }
+   Spacer(Modifier.height(22.dp));Text("PRODUCT SPECIFICATIONS",color=Muted,fontSize=9.sp,letterSpacing=1.5.sp,fontFamily=FontFamily.Monospace);Spacer(Modifier.height(10.dp))
+   Column(verticalArrangement=Arrangement.spacedBy(9.dp)){specs.chunked(2).forEach{pair->Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(9.dp)){pair.forEach{(label,opts)->Box(Modifier.weight(1f)){SelectBox(label,values[label]!!,opts){v->values=values.toMutableMap().also{it[label]=v};found=false}}};if(pair.size==1)Spacer(Modifier.weight(1f))}}}
+   Spacer(Modifier.height(18.dp));Button(onClick={found=true},Modifier.fillMaxWidth().height(58.dp),shape=RoundedCornerShape(18.dp),colors=ButtonDefaults.buttonColors(containerColor=Cyan,contentColor=Color.Black)){Text(if(found)"✓  MATCHES FOUND" else "⌕  FIND EXACT "+title,fontSize=12.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace)}
+   Spacer(Modifier.height(22.dp));Text(if(found)"MATCHED PRODUCTS" else "POPULAR "+title,color=Cyan,fontSize=13.sp,fontWeight=FontWeight.ExtraBold,fontFamily=FontFamily.Monospace);Spacer(Modifier.height(9.dp))
+   Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(10.dp)){
+    listOf("Featured ","Top Value ","Premium ","Best Seller").forEachIndexed{i,n->Surface(Modifier.width(215.dp),shape=RoundedCornerShape(19.dp),color=Panel,border=BorderStroke(1.dp,listOf(Gold,Cyan,Purple,Green)[i])){Column(Modifier.padding(10.dp)){Art(when(category){"MOBILE"->cats[1];"TV"->cats[2];"AC"->cats[3];else->cats[4]},Modifier.height(105.dp));Text(n+title,color=White,fontSize=12.sp,fontWeight=FontWeight.Bold);Text(if(category=="MOBILE")"12GB • 256GB" else if(category=="TV")"55 inch • 4K" else if(category=="AC")"1.5 Ton • 5★" else "300L • 4★",color=Muted,fontSize=9.sp);Spacer(Modifier.height(6.dp));Text("From ₹ 7,499",color=White,fontSize=14.sp,fontWeight=FontWeight.ExtraBold);Spacer(Modifier.height(5.dp));OutlinedButton(onClick={found=true},Modifier.fillMaxWidth().height(35.dp),shape=RoundedCornerShape(10.dp),border=BorderStroke(1.dp,Cyan)){Text("Compare prices →",color=Cyan,fontSize=8.sp)}}}}
+   }
+   Spacer(Modifier.height(25.dp))
+  }
+ }
+}
+
+@Composable private fun Footer(tab:Int,onTab:(Int)->Unit){
+ Surface(color=Color(0xFF080E18),border=BorderStroke(1.dp,Color(0xFF26364F))){
+  Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(8.dp),horizontalArrangement=Arrangement.SpaceEvenly){
+   listOf("⌂" to "Home","◷" to "History","♡" to "Saved","⚙" to "Settings").forEachIndexed{i,(icon,label)->
+    Surface(Modifier.weight(1f).clickable{onTab(i)},shape=RoundedCornerShape(14.dp),color=if(tab==i)Cyan.copy(.10f) else Color.Transparent){
+     Column(Modifier.padding(vertical=8.dp),horizontalAlignment=Alignment.CenterHorizontally){Text(icon,color=if(tab==i)Cyan else Muted,fontSize=21.sp);Text(label,color=if(tab==i)White else Muted,fontSize=8.sp,fontFamily=FontFamily.Monospace)}
+    }
+   }
+  }
+ }
+}
+
+@Composable private fun MainShell(){
+ var tab by remember{mutableStateOf(0)}
+ var screen by remember{mutableStateOf("HOME")}
+ var compareQuery by remember{mutableStateOf("")}
+ Column(Modifier.fillMaxSize().background(Bg)){
+  Box(Modifier.weight(1f)){
+   when(screen){
+    "HOME"->HomeScreen{screen=if(it=="SEARCH"||it=="ALL")"SEARCH" else it}
+    "GEYSER"->GeyserScreen({screen="HOME"}){q->compareQuery=q;screen="COMPARE"}
+    "MOBILE","TV","AC","FRIDGE"->GenericCategoryScreen(screen){screen="HOME"}
+    "SEARCH"->GenericCategoryScreen("MOBILE"){screen="HOME"}
+    "COMPARE"->CompareScreen(compareQuery){screen="HOME"}
+    else->Box(Modifier.fillMaxSize().background(Bg),contentAlignment=Alignment.Center){
+      Column(horizontalAlignment=Alignment.CenterHorizontally){
+       Text(when(tab){1->"PRICE HISTORY";2->"SAVED PRODUCTS";else->"SETTINGS"},color=Cyan,fontSize=18.sp,fontFamily=FontFamily.Monospace,fontWeight=FontWeight.Bold)
+       Spacer(Modifier.height(12.dp));Text("Your comparison data and settings will appear here.",color=Muted,fontSize=11.sp,textAlign=TextAlign.Center)
+       Spacer(Modifier.height(18.dp));Button(onClick={screen="HOME"},colors=ButtonDefaults.buttonColors(containerColor=Cyan,contentColor=Color.Black)){Text("← BACK HOME")}}
+    }
+   }
+  }
+  if(screen!="GEYSER")Footer(tab){tab=it;screen=if(it==0)"HOME" else "TAB"}
+ }
+}
