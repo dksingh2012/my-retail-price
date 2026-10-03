@@ -45,6 +45,7 @@ private val NeonPurple = Color(0xFF9B5CFF)
 private val NeonGreen = Color(0xFF39FF88)
 private val CyberText = Color(0xFFE8F7FF)
 private val CyberMuted = Color(0xFF8EA3B8)
+private val Gold = Color(0xFFFFC857)
 
 @Serializable
 data class Offer(
@@ -247,6 +248,66 @@ fun CategoryCard(category: ProductCategory, selected: Boolean, onClick: () -> Un
             Text(category.name, color = CyberText, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
                 fontFamily = FontFamily.Monospace)
             Text(category.subtitle, color = CyberMuted, fontSize = 9.sp)
+        }
+    }
+}
+
+@Composable
+fun SpecBox(category: ProductCategory, label: String, initial: String) {
+    var value by remember(category.name,label) { mutableStateOf(initial) }
+    var expanded by remember(category.name,label) { mutableStateOf(false) }
+    val options = when(category.name) {
+        "GEYSER" -> when(label) {
+            "Brand" -> listOf("Select brand","Orient","Bajaj","Racold","Havells")
+            "Type" -> listOf("Storage","Instant")
+            "Capacity" -> listOf("6L","10L","15L","25L")
+            "Star Rating" -> listOf("3★","4★","5★")
+            else -> listOf("1500W","2000W","3000W")
+        }
+        "MOBILE" -> when(label) {
+            "Brand" -> listOf("Select brand","Samsung","Apple","OnePlus","Xiaomi")
+            "Model" -> listOf("Select model","Galaxy S25 Ultra","iPhone 17 Pro","OnePlus 13")
+            "RAM" -> listOf("4GB","6GB","8GB","12GB")
+            "Storage" -> listOf("128GB","256GB","512GB","1TB")
+            else -> listOf("Black","Silver","Blue","Green")
+        }
+        "TV" -> when(label) {
+            "Brand" -> listOf("Select brand","Sony","LG","Samsung","TCL")
+            "Model" -> listOf("Select model","Bravia 55","OLED C5","QLED 55")
+            "Screen Size" -> listOf("43 inch","50 inch","55 inch","65 inch")
+            "Resolution" -> listOf("FHD","4K","8K")
+            else -> listOf("LED","QLED","OLED")
+        }
+        "AC" -> when(label) {
+            "Brand" -> listOf("Select brand","LG","Daikin","Voltas","Blue Star")
+            "Model" -> listOf("Select model","1.5 Ton 5 Star","1.5 Ton 3 Star")
+            "Capacity" -> listOf("1 Ton","1.5 Ton","2 Ton")
+            "Type" -> listOf("Split","Window")
+            else -> listOf("3★","4★","5★")
+        }
+        else -> when(label) {
+            "Brand" -> listOf("Select brand","LG","Samsung","Whirlpool","Haier")
+            "Model" -> listOf("Select model","655L","650L","500L")
+            "Capacity" -> listOf("250L","350L","500L","650L")
+            "Type" -> listOf("Frost Free","Direct Cool")
+            else -> listOf("3★","4★","5★")
+        }
+    }
+    Box(Modifier.width(112.dp).height(82.dp)) {
+        Surface(Modifier.fillMaxSize().clickable { expanded=true }, shape=RoundedCornerShape(13.dp),
+            color=CyberPanel2, border=BorderStroke(1.dp,category.color.copy(alpha=.38f))) {
+            Column(Modifier.padding(9.dp)) {
+                Text(label.uppercase(),color=category.color,fontSize=7.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Monospace)
+                Spacer(Modifier.height(5.dp))
+                Text(value,color=CyberText,fontSize=9.sp,maxLines=1)
+                Spacer(Modifier.weight(1f))
+                Text("SELECT  ⌄",color=category.color,fontSize=7.sp,fontFamily=FontFamily.Monospace)
+            }
+        }
+        DropdownMenu(expanded,{expanded=false},modifier=Modifier.background(CyberPanel2)) {
+            options.forEach { option ->
+                DropdownMenuItem(text={Text(option,color=CyberText,fontSize=11.sp)},onClick={value=option;expanded=false})
+            }
         }
     }
 }
