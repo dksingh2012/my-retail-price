@@ -1,0 +1,8 @@
+name = "my-retail-price-api"
+main = "cloudflare/worker.js"
+compatibility_date = "2026-10-02"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "my-retail-price"
+database_id = "81446073-38cd-43f4-a247-d061fcf5a93a"
