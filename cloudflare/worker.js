@@ -7,6 +7,36 @@ const LAT="28.4595";
 const LON="77.0266";
 const LIVE_PLATFORMS=["BlinkIt","Zepto","BigBasket","JioMart"];
 
+// Keep provider search broad enough to find products, then remove clearly
+// irrelevant matches locally. All query terms must match the product text.
+// A numeric size token such as "200ml" is treated as a preference rather than
+// a hard requirement so products with equivalent pack formatting are retained.
+function filterRelevantOffers(offers,q){
+  const tokens=q.toLowerCase().replace(/[^a-z0-9.]+/g," ").trim().split(/\\s+/).filter(Boolean);
+  if(!tokens.length) return offers;
+  const scored=offers.map(o=>{
+    const text=[o.name,o.brand,o.pack].filter(Boolean).join(" ").toLowerCase();
+    let score=0, matched=0;
+    for(const token of tokens){
+      const numeric=/^\\d+(?:\\.\\d+)?(?:ml|l|g|kg|mg|pcs?|pack)?$/.test(token);
+      if(text.includes(token)){ matched++; score += numeric ? 2 : 5; }
+      else if(numeric){
+        const n=token.match(/^(\\d+(?:\\.\\d+)?)(ml|l|g|kg|mg|pcs?|pack)?$/);
+        if(n && text.includes(n[1])){ matched++; score += 1; }
+      }
+    }
+    // Product-name/brand matches are mandatory. This prevents results such as
+    // "onion" appearing for a "ghee" search just because the provider returned it.
+    const primary=tokens.filter(t=>!/^\\d/.test(t));
+    const primaryMatched=primary.filter(t=>text.includes(t)).length;
+    return {...o,_score:score,_matched:matched,_primaryMatched:primaryMatched,_tokenCount:tokens.length};
+  });
+  const primaryCount=tokens.filter(t=>!/^\\d/.test(t)).length;
+  const relevant=scored.filter(x=>x._primaryMatched===primaryCount && x._matched>=Math.min(tokens.length,primaryCount));
+  relevant.sort((a,b)=>b._score-a._score || a.price-b.price);
+  return relevant.map(({_score,_matched,_primaryMatched,_tokenCount,...o})=>o);
+}
+
 async function liveSearch(q,pincode,env){
   if(!env.QUICKCOMMERCE_API_KEY) return {ok:false,error:"QUICKCOMMERCE_API_KEY is not configured"};
   const url=new URL("https://api.quickcommerceapi.com/v1/groupsearch");
@@ -34,8 +64,9 @@ async function liveSearch(q,pincode,env){
       });
     }
   }
-  offers.sort((a,b)=>a.price-b.price);
-  return {ok:true,offers,credits_remaining:body.credits_remaining};
+  const relevantOffers=filterRelevantOffers(offers,q);
+  relevantOffers.sort((a,b)=>a.price-b.price);
+  return {ok:true,offers:relevantOffers,credits_remaining:body.credits_remaining};
 }
 
 
