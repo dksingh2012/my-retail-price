@@ -5,7 +5,7 @@ const PIN="122001";
 // Gurugram city-center coordinates; actual serviceability is checked by the provider.
 const LAT="28.4595";
 const LON="77.0266";
-const LIVE_PLATFORMS=["BlinkIt","Zepto","BigBasket","JioMart"];
+const LIVE_PLATFORMS=["BlinkIt","Zepto","BigBasket","JioMart","Amazon","Flipkart"];
 
 // Keep provider search broad enough to find products, then remove clearly
 // irrelevant matches locally. All query terms must match the product text.
