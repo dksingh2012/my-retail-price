@@ -286,7 +286,7 @@ fun GroceryHome() {
                     Spacer(Modifier.height(10.dp))
                     Button(
                         onClick = { search() }, enabled = query.isNotBlank() && !loading,
-                        Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(16.dp)
+                        modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(16.dp)
                     ) {
                         Text(if (loading) "CHECKING PRICES..." else "⌕  COMPARE PRICES",
                             fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
@@ -324,7 +324,7 @@ fun GroceryHome() {
                                     Text("LOWEST PRICE FOUND", color = Color(0xFF08743A), fontWeight = FontWeight.ExtraBold, fontSize = 10.sp)
                                     Text(cheapest.retailer ?: "Retailer", color = Color(0xFF10213B), fontWeight = FontWeight.Bold)
                                 }
-                                Text("₹§{"%.0f".format(cheapest.price ?: 0.0)}", color = Color(0xFF10213B), fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
+                                Text("₹${"%.0f".format(cheapest.price ?: 0.0)}", color = Color(0xFF10213B), fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
                             }
                         }
                     }
@@ -336,9 +336,9 @@ fun GroceryHome() {
                             Row(Modifier.fillMaxWidth().padding(vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Column(Modifier.weight(1f)) {
                                     Text(offer.retailer ?: "Retailer", color = Color(0xFF10213B), fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                    Text("§{offer.name ?: query} §{offer.pack ?: ""}".trim(), color = Color(0xFF657180), fontSize = 10.sp)
+                                    Text("${offer.name ?: query} ${offer.pack ?: ""}".trim(), color = Color(0xFF657180), fontSize = 10.sp)
                                 }
-                                Text("₹§{"%.0f".format(offer.price ?: 0.0)}", color = Color(0xFF10213B), fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+                                Text("₹${"%.0f".format(offer.price ?: 0.0)}", color = Color(0xFF10213B), fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
                             }
                             HorizontalDivider(color = Color(0xFFE9EEF0))
                         }
@@ -368,7 +368,7 @@ fun GroceryHome() {
                         placeholder = { Text("e.g. milk, atta, salt") }, shape = RoundedCornerShape(16.dp))
                     Spacer(Modifier.height(9.dp))
                     Button(onClick = { compareBasket() }, enabled = !basketLoading && basketInput.isNotBlank(),
-                        Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6A00))) {
                         Text(if (basketLoading) "CALCULATING..." else "🛒  COMPARE MY BASKET",
                             fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
@@ -379,7 +379,7 @@ fun GroceryHome() {
                         Surface(shape = RoundedCornerShape(16.dp), color = Color(0xFFEAF8EF)) {
                             Column(Modifier.fillMaxWidth().padding(13.dp)) {
                                 Text("CHEAPEST SPLIT BASKET", color = Color(0xFF08743A), fontWeight = FontWeight.ExtraBold, fontSize = 10.sp)
-                                Text("₹§{"%.0f".format(basketSplitTotal)}", color = Color(0xFF10213B), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+                                Text("₹${"%.0f".format(basketSplitTotal)}", color = Color(0xFF10213B), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
                             }
                         }
                         Spacer(Modifier.height(7.dp))
@@ -388,7 +388,7 @@ fun GroceryHome() {
                                 Text("CHEAPEST SINGLE STORE", color = Color(0xFF10213B), fontWeight = FontWeight.ExtraBold, fontSize = 10.sp)
                                 if (basketSingleRetailer != null && basketSingleTotal != null) {
                                     Text(basketSingleRetailer!!, color = Color(0xFF10213B), fontWeight = FontWeight.Bold)
-                                    Text("₹§{"%.0f".format(basketSingleTotal)}", color = Color(0xFF10213B), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+                                    Text("₹${"%.0f".format(basketSingleTotal)}", color = Color(0xFF10213B), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
                                 } else {
                                     Text("No single retailer has every matched item.", color = Color(0xFF657180), fontSize = 11.sp)
                                 }
@@ -400,11 +400,11 @@ fun GroceryHome() {
                                     Text(line.query, color = Color(0xFF10213B), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                     Text(line.offer.retailer ?: "Retailer", color = Color(0xFF657180), fontSize = 10.sp)
                                 }
-                                Text("₹§{"%.0f".format(line.offer.price ?: 0.0)}", color = Color(0xFF10213B), fontWeight = FontWeight.ExtraBold)
+                                Text("₹${"%.0f".format(line.offer.price ?: 0.0)}", color = Color(0xFF10213B), fontWeight = FontWeight.ExtraBold)
                             }
                         }
                         if (basketMissing.isNotEmpty()) {
-                            Text("Not found: §{basketMissing.joinToString(", ")}", color = Color(0xFF9C241D), fontSize = 10.sp)
+                            Text("Not found: ${basketMissing.joinToString(", ")}", color = Color(0xFF9C241D), fontSize = 10.sp)
                         }
                     }
                 }
