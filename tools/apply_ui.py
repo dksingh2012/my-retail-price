@@ -292,7 +292,10 @@ fun GeyserScreen(onBack: () -> Unit) {
 }
 
 '''
-if "fun GeyserScreen(" not in s:\n    s=s[:insert_at]+geyser+s[insert_at:]\n\n# Make selecting Geyser open its screen
+if "fun GeyserScreen(" not in s:
+    s=s[:insert_at]+geyser+s[insert_at:]
+
+# Make selecting Geyser open its screen
 s=s.replace('fun HighValueHome() {','fun HighValueHome(onGeyser: () -> Unit) {')
 s=s.replace('''fun select(category: ProductCategory) {
         selected = category''','''fun select(category: ProductCategory) {
