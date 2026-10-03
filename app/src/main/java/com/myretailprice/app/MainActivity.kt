@@ -195,6 +195,30 @@ fun CategoryCard(category: ProductCategory, selected: Boolean, onClick: () -> Un
 }
 
 @Composable
+fun ProductSpecPanel(category: ProductCategory) {
+    val specs = when (category.name) {
+        "GEYSER" -> listOf("Brand" to "Select brand", "Type" to "Storage / Instant", "Capacity" to "6L / 10L / 15L / 25L", "Star Rating" to "1★ / 2★ / 3★ / 4★ / 5★", "Power" to "Select wattage")
+        "MOBILE" -> listOf("Brand" to "Select brand", "Model" to "Select model", "RAM" to "4GB / 6GB / 8GB / 12GB", "Storage" to "128GB / 256GB / 512GB / 1TB", "Variant / Color" to "Select variant")
+        "TV" -> listOf("Brand" to "Select brand", "Model" to "Select model", "Screen Size" to "32 / 43 / 50 / 55 / 65 inch", "Resolution" to "HD / FHD / 4K / 8K", "Panel / Type" to "LED / QLED / OLED")
+        "AC" -> listOf("Brand" to "Select brand", "Model" to "Select model", "Capacity" to "1 Ton / 1.5 Ton / 2 Ton", "Type" to "Split / Window", "Rating" to "3★ / 4★ / 5★", "Technology" to "Inverter / Fixed Speed")
+        else -> listOf("Brand" to "Select brand", "Model" to "Select model", "Capacity" to "Select capacity", "Type" to "Frost Free / Direct Cool", "Rating" to "2★ / 3★ / 4★ / 5★", "Special" to "Convertible / Standard")
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Text("PRODUCT SPECIFICATIONS", color = CyberMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.3.sp, fontFamily = FontFamily.Monospace)
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            specs.forEach { (label, value) ->
+                Surface(shape = RoundedCornerShape(11.dp), color = CyberPanel2, border = BorderStroke(1.dp, Color(0xFF2B3D59))) {
+                    Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+                        Text(label.uppercase(), color = category.color, fontSize = 7.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                        Text(value, color = CyberText, fontSize = 8.sp)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun ExactMatchPanel(
     query: String,
     onQueryChange: (String) -> Unit,
@@ -355,6 +379,8 @@ fun HighValueHome() {
                 categories.forEach { category -> CategoryCard(category, selected == category) { select(category) } }
             }
             Spacer(Modifier.height(15.dp))
+            ProductSpecPanel(selected)
+            Spacer(Modifier.height(12.dp))
             ExactMatchPanel(query, { query = it }, selected, loading, live, offers, error) { search() }
             Spacer(Modifier.height(15.dp))
             Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp), color = Color(0xFF0A111D),
