@@ -50,7 +50,7 @@ private data class LiveOffer(
  val matchType:String,val productUrl:String,val available:Boolean
 )
 
-private suspend fun fetchLiveOffers(query:String):Result<List<LiveOffer>>=withContext(Dispatchers.IO){
+private suspend fun fetchLiveOffers(query:String):Result<List<LiveOffer>> = withContext(Dispatchers.IO){
  try{
   val encoded=URLEncoder.encode(query,"UTF-8")
   val conn=URL("https://my-retail-price-api.dksingh2012.workers.dev/api/compare?q="+encoded+"&pincode=122001").openConnection() as HttpURLConnection
