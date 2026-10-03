@@ -623,6 +623,7 @@ fun GeyserScreen(onBack: () -> Unit) {
         Spacer(Modifier.height(24.dp))
     }
 }
+}
 @Composable
 fun HighValueHome(onGeyser: () -> Unit) {
     var selected by remember { mutableStateOf(categories.first()) }
