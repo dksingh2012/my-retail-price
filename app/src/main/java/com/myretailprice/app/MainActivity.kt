@@ -22,6 +22,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -110,30 +111,43 @@ suspend fun fetchOffers(client: HttpClient, query: String): List<Offer> {
 @Composable
 fun CyberHeader() {
     Column(
-        Modifier
-            .fillMaxWidth()
-            .background(Brush.horizontalGradient(listOf(Color(0xFF07121F), Color(0xFF0B1020), Color(0xFF07131D))))
-            .padding(horizontal = 18.dp, vertical = 18.dp)
+        Modifier.fillMaxWidth()
+            .background(Brush.verticalGradient(listOf(Color(0xFF061323), Color(0xFF030812))))
+            .padding(horizontal = 18.dp, vertical = 12.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("MY RETAIL PRICE", color = CyberText, fontSize = 27.sp,
-                    fontWeight = FontWeight.ExtraBold, fontFamily = FontFamily.Monospace, letterSpacing = 1.2.sp)
-                Text("COMPARE & SHOP", color = NeonCyan, fontSize = 10.sp,
-                    letterSpacing = 2.5.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("🛒", fontSize = 24.sp)
+                    Spacer(Modifier.width(5.dp))
+                    Text("MY RETAIL PRICE",
+                        style = TextStyle(
+                            brush = Brush.horizontalGradient(listOf(Gold, Color.White, NeonCyan)),
+                            fontSize = 27.sp, fontWeight = FontWeight.Black,
+                            fontFamily = FontFamily.Monospace, letterSpacing = 1.sp
+                        ))
+                }
+                Text("—  C O M P A R E   &   S H O P  —",
+                    color = NeonCyan, fontSize = 9.sp, letterSpacing = 2.5.sp,
+                    fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
             }
-            Surface(shape = RoundedCornerShape(14.dp), color = NeonCyan.copy(alpha = .10f),
-                border = BorderStroke(1.dp, NeonCyan.copy(alpha = .45f))) {
-                Text("GURUGRAM 122001", Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-                    color = NeonCyan, fontSize = 9.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+            Surface(shape = RoundedCornerShape(14.dp),
+                color = Color(0xFF061B2D), border = BorderStroke(1.dp, NeonCyan.copy(alpha=.8f))) {
+                Column(Modifier.padding(horizontal = 11.dp, vertical = 7.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("⌖  Gurugram", color = CyberText, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    Text("122001  ⌄", color = NeonCyan, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
-        Spacer(Modifier.height(16.dp))
-        Text("Compare prices. Buy smarter.", color = CyberText, fontSize = 18.sp,
-            lineHeight = 23.sp, fontWeight = FontWeight.ExtraBold)
-        Spacer(Modifier.height(5.dp))
+        Spacer(Modifier.height(10.dp))
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text("Compare prices. ", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black)
+            Text("Buy smarter.", color = NeonCyan, fontSize = 20.sp, fontWeight = FontWeight.Black)
+        }
+        Spacer(Modifier.height(3.dp))
         Text("Find the exact model and compare verified retailer prices.",
-            color = CyberMuted, fontSize = 12.sp)
+            color = Color(0xFFB8D4E8), fontSize = 11.sp)
     }
 }
 
@@ -184,6 +198,11 @@ fun CategoryDropdown(
 fun ProductArt(category: ProductCategory, modifier: Modifier = Modifier) {
     Canvas(modifier.fillMaxWidth().height(78.dp)) {
         val w=size.width; val h=size.height
+        drawRoundRect(
+            Brush.radialGradient(listOf(Color(0xFF173B58), Color(0xFF07111F))),
+            topLeft=Offset(0f,0f), size=androidx.compose.ui.geometry.Size(w,h),
+            cornerRadius=androidx.compose.ui.geometry.CornerRadius(18f,18f)
+        )
         when(category.name) {
             "GEYSER" -> {
                 drawRoundRect(Color(0xFFF3F6F8), topLeft=Offset(w*.31f,h*.05f),
@@ -241,13 +260,18 @@ fun ProductArt(category: ProductCategory, modifier: Modifier = Modifier) {
 @Composable
 fun CategoryCard(category: ProductCategory, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(modifier.clickable { onClick() }, shape = RoundedCornerShape(18.dp),
-        color = if (selected) category.color.copy(alpha = .12f) else CyberPanel,
-        border = BorderStroke(1.dp, if (selected) category.color.copy(alpha = .85f) else Color(0xFF233149))) {
-        Column(Modifier.padding(9.dp)) {
-            ProductArt(category, Modifier.height(58.dp))
-            Text(category.name, color = CyberText, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
-                fontFamily = FontFamily.Monospace)
-            Text(category.subtitle, color = CyberMuted, fontSize = 9.sp)
+        color = if (selected) category.color.copy(alpha = .13f) else Color(0xFF071321),
+        border = BorderStroke(1.5.dp, if (selected) category.color else category.color.copy(alpha=.38f))) {
+        Column(Modifier.padding(7.dp)) {
+            ProductArt(category, Modifier.height(64.dp))
+            Row(verticalAlignment=Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(category.name, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black,
+                        fontFamily = FontFamily.Monospace)
+                    Text(category.subtitle, color = Color(0xFFB8CBE0), fontSize = 8.sp)
+                }
+                Text("›", color=category.color, fontSize=24.sp, fontWeight=FontWeight.Bold)
+            }
         }
     }
 }
@@ -328,15 +352,13 @@ fun ProductSpecPanel(category: ProductCategory) {
             Text("TAP TO SELECT",color=category.color,fontSize=7.sp,fontFamily=FontFamily.Monospace)
         }
         Spacer(Modifier.height(7.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            specs.chunked(2).forEach { row ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    row.forEach { (label,value) ->
-                        Box(Modifier.weight(1f)) {
-                            SpecBox(category,label,value, Modifier.fillMaxWidth())
-                        }
-                    }
-                    if (row.size == 1) Spacer(Modifier.weight(1f))
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            specs.forEach { (label,value) ->
+                Box(Modifier.width(112.dp)) {
+                    SpecBox(category,label,value, Modifier.fillMaxWidth())
                 }
             }
         }
@@ -385,8 +407,8 @@ fun ExactMatchPanel(
             Button(onClick = onSearch, enabled = query.isNotBlank() && !loading,
                 modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = NeonCyan, contentColor = Color.Black)) {
-                Text(if (loading) "SCANNING..." else "⌕  COMPARE & SHOP",
-                    fontWeight = FontWeight.ExtraBold, fontSize = 13.sp, fontFamily = FontFamily.Monospace)
+                Text(if (loading) "SCANNING..." else "⌕  COMPARE & SHOP   ›",
+                    fontWeight = FontWeight.Black, fontSize = 14.sp, fontFamily = FontFamily.Monospace)
             }
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -506,7 +528,8 @@ fun GeyserScreen(onBack: () -> Unit) {
             Column(Modifier.padding(12.dp)) {
                 Row(verticalAlignment=Alignment.CenterVertically) {
                     Column(Modifier.weight(1.15f)) {
-                        Text("FIND YOUR GEYSER",color=CyberText,fontSize=23.sp,fontWeight=FontWeight.Black)
+                        Text("FIND YOUR ",color=Color.White,fontSize=23.sp,fontWeight=FontWeight.Black)
+                        Text("GEYSER",color=NeonCyan,fontSize=23.sp,fontWeight=FontWeight.Black)
                         Text("Select specifications to find the exact model.",color=CyberMuted,fontSize=10.sp)
                     }
                     ProductArt(categories.first(),Modifier.weight(.85f).height(105.dp))
@@ -566,7 +589,7 @@ fun GeyserScreen(onBack: () -> Unit) {
 
         Spacer(Modifier.height(9.dp))
         Button(onClick={searched=true},Modifier.padding(horizontal=12.dp).fillMaxWidth().height(52.dp),
-            shape=RoundedCornerShape(15.dp),colors=ButtonDefaults.buttonColors(containerColor=NeonCyan,contentColor=Color.Black)) {
+            shape=RoundedCornerShape(15.dp),colors=ButtonDefaults.buttonColors(containerColor=Color(0xFF18E6F5),contentColor=Color.Black)) {
             Text(if(searched)"✓  EXACT GEYSER MATCHES FOUND" else "⌕  FIND EXACT GEYSER",fontSize=12.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace)
         }
 
@@ -703,14 +726,17 @@ fun HighValueHome(onGeyser: () -> Unit) {
             Text("POPULAR CATEGORIES", color = NeonCyan, fontSize = 10.sp, fontWeight = FontWeight.Bold,
                 letterSpacing = 1.3.sp, fontFamily = FontFamily.Monospace)
             Spacer(Modifier.height(8.dp))
-            categories.chunked(2).forEach { row ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    row.forEach { category ->
-                        CategoryCard(category, selected == category, { select(category) }, Modifier.weight(1f))
-                    }
-                    if (row.size == 1) Spacer(Modifier.weight(1f))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                categories.take(3).forEach { category ->
+                    CategoryCard(category, selected == category, { select(category) }, Modifier.weight(1f))
                 }
-                Spacer(Modifier.height(10.dp))
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                categories.drop(3).forEach { category ->
+                    CategoryCard(category, selected == category, { select(category) }, Modifier.weight(1f))
+                }
+                Spacer(Modifier.weight(1f))
             }
             Spacer(Modifier.height(6.dp))
             ProductSpecPanel(selected)
