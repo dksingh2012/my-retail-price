@@ -3,6 +3,8 @@ import re
 
 p=Path("app/src/main/java/com/myretailprice/app/MainActivity.kt")
 s=p.read_text()
+if "private val Gold" not in s:
+    s=s.replace("private val CyberMuted = Color(0xFF8EA3B8)","private val CyberMuted = Color(0xFF8EA3B8)\nprivate val Gold = Color(0xFFFFC857)")
 
 # imports
 if "import androidx.compose.foundation.Canvas" not in s:
