@@ -20,6 +20,22 @@ function normalizeProductIdentity(o){
   return {...o,identity:{brand:String(o.brand||"").toLowerCase().trim(),models:[...new Set(modelTokens)],capacity:[...new Set(capacity)]}};
 }
 
+function classifyMatch(o,q){
+  const text=[o.name,o.brand,o.pack].filter(Boolean).join(" ").toLowerCase();
+  const query=q.toLowerCase();
+  const queryModels=(query.match(/\b[a-z]{1,6}[-/]?\d{2,}[a-z0-9/-]*\b/gi)||[]).map(x=>x.toLowerCase());
+  const offerModels=o.identity?.models||[];
+  const modelExact=queryModels.length>0 && queryModels.every(m=>offerModels.includes(m));
+  const brandQuery=(q.match(/^[a-z]+/i)?.[0]||"").toLowerCase();
+  const brandExact=!!o.identity?.brand && (query.includes(o.identity.brand) || !brandQuery || o.identity.brand===brandQuery);
+  const queryCaps=(query.match(/\b\d+(?:\.\d+)?\s*(?:l|litre|liter|kg|g|ml|inch|in|ton|tb|gb)\b/gi)||[]).map(x=>x.replace(/\s+/g,"").toLowerCase());
+  const offerCaps=o.identity?.capacity||[];
+  const capacityExact=queryCaps.length===0 || queryCaps.every(c=>offerCaps.includes(c));
+  if(modelExact && brandExact && capacityExact) return "exact_match";
+  if(modelExact || (brandExact && capacityExact)) return "close_match";
+  return "alternative";
+}
+
 function filterRelevantOffers(offers,q){
   const tokens=q.toLowerCase().replace(/[^a-z0-9.]+/g," ").trim().split(/\\s+/).filter(Boolean);
   if(!tokens.length) return offers;
@@ -74,7 +90,7 @@ async function liveSearch(q,pincode,env){
     }
   }
   const normalizedOffers=offers.map(normalizeProductIdentity);
-  const relevantOffers=filterRelevantOffers(normalizedOffers,q);
+  const relevantOffers=filterRelevantOffers(normalizedOffers,q).map(o=>({...o,match_type:classifyMatch(o,q)}));
   relevantOffers.sort((a,b)=>a.price-b.price);
   return {ok:true,offers:relevantOffers,credits_remaining:body.credits_remaining};
 }
