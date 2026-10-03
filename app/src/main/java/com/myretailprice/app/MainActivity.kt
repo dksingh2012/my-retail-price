@@ -117,8 +117,8 @@ fun CyberHeader() {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("MY RETAIL PRICE", color = CyberText, fontSize = 22.sp,
-                    fontWeight = FontWeight.ExtraBold, fontFamily = FontFamily.Monospace, letterSpacing = 1.sp)
+                Text("MY RETAIL PRICE", color = CyberText, fontSize = 27.sp,
+                    fontWeight = FontWeight.ExtraBold, fontFamily = FontFamily.Monospace, letterSpacing = 1.2.sp)
                 Text("COMPARE & SHOP", color = NeonCyan, fontSize = 10.sp,
                     letterSpacing = 2.5.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
             }
@@ -239,13 +239,13 @@ fun ProductArt(category: ProductCategory, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun CategoryCard(category: ProductCategory, selected: Boolean, onClick: () -> Unit) {
-    Surface(Modifier.width(142.dp).clickable { onClick() }, shape = RoundedCornerShape(18.dp),
+fun CategoryCard(category: ProductCategory, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(modifier.clickable { onClick() }, shape = RoundedCornerShape(18.dp),
         color = if (selected) category.color.copy(alpha = .12f) else CyberPanel,
         border = BorderStroke(1.dp, if (selected) category.color.copy(alpha = .85f) else Color(0xFF233149))) {
         Column(Modifier.padding(10.dp)) {
-            ProductArt(category)
-            Text(category.name, color = CyberText, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
+            ProductArt(category, Modifier.height(82.dp))
+            Text(category.name, color = CyberText, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold,
                 fontFamily = FontFamily.Monospace)
             Text(category.subtitle, color = CyberMuted, fontSize = 9.sp)
         }
@@ -434,23 +434,28 @@ fun ExactMatchPanel(
 }
 
 @Composable
-fun GeyserCard(title: String, accent: Color) {
-    Surface(Modifier.width(230.dp),shape=RoundedCornerShape(20.dp),color=CyberPanel,border=BorderStroke(1.dp,accent.copy(alpha=.6f))) {
-        Column(Modifier.padding(12.dp)) {
-            ProductArt(categories.first(),Modifier.height(105.dp))
+fun GeyserCard(title: String, accent: Color, price: String) {
+    Surface(Modifier.width(220.dp),shape=RoundedCornerShape(18.dp),color=CyberPanel,border=BorderStroke(1.dp,accent.copy(alpha=.65f))) {
+        Column(Modifier.padding(10.dp)) {
+            ProductArt(categories.first(),Modifier.height(92.dp))
             Text(title,color=CyberText,fontSize=13.sp,fontWeight=FontWeight.ExtraBold)
             Text("Storage geyser",color=CyberMuted,fontSize=9.sp)
-            Spacer(Modifier.height(7.dp))
-            Row(horizontalArrangement=Arrangement.spacedBy(6.dp)) {
+            Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement=Arrangement.spacedBy(5.dp)) {
                 listOf("15L","5★","2000W").forEach {
-                    Surface(shape=RoundedCornerShape(8.dp),color=accent.copy(alpha=.08f),border=BorderStroke(1.dp,accent.copy(alpha=.25f))) {
-                        Text(it,Modifier.padding(horizontal=7.dp,vertical=5.dp),color=accent,fontSize=8.sp,fontFamily=FontFamily.Monospace)
+                    Surface(shape=RoundedCornerShape(7.dp),color=accent.copy(alpha=.08f),border=BorderStroke(1.dp,accent.copy(alpha=.25f))) {
+                        Text(it,Modifier.padding(horizontal=6.dp,vertical=4.dp),color=accent,fontSize=8.sp,fontFamily=FontFamily.Monospace)
                     }
                 }
             }
-            Spacer(Modifier.height(9.dp))
-            Text("PRICE CHECK",color=NeonGreen,fontSize=9.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Monospace)
-            Text("Verified retailer prices will appear here",color=CyberMuted,fontSize=9.sp)
+            Spacer(Modifier.height(7.dp))
+            Text("FROM  ₹$price",color=CyberText,fontSize=16.sp,fontWeight=FontWeight.ExtraBold)
+            Spacer(Modifier.height(7.dp))
+            Button(onClick={},Modifier.fillMaxWidth().height(38.dp),shape=RoundedCornerShape(11.dp),
+                colors=ButtonDefaults.buttonColors(containerColor=Color.Transparent,contentColor=NeonCyan),
+                border=BorderStroke(1.dp,NeonCyan.copy(alpha=.75f))) {
+                Text("Compare prices  →",fontSize=9.sp,fontWeight=FontWeight.Bold)
+            }
         }
     }
 }
@@ -462,51 +467,78 @@ fun GeyserScreen(onBack: () -> Unit) {
     var capacity by remember { mutableStateOf("15L") }
     var rating by remember { mutableStateOf("5★") }
     var power by remember { mutableStateOf("2000W") }
+    var pressure by remember { mutableStateOf("6 Bar") }
     var searched by remember { mutableStateOf(false) }
-    val boxes=listOf(
+
+    val boxes = listOf(
         Triple("Brand",brand,listOf("Select Brand","Orient","Bajaj","Racold","Havells")),
         Triple("Type",type,listOf("Storage","Instant")),
         Triple("Capacity",capacity,listOf("6L","10L","15L","25L")),
         Triple("Star Rating",rating,listOf("3★","4★","5★")),
-        Triple("Power",power,listOf("1500W","2000W","3000W"))
+        Triple("Power",power,listOf("1500W","2000W","3000W")),
+        Triple("Pressure",pressure,listOf("6 Bar","8 Bar"))
     )
+
     Column(Modifier.fillMaxSize().background(CyberBg).verticalScroll(rememberScrollState())) {
-        Row(Modifier.fillMaxWidth().padding(16.dp),verticalAlignment=Alignment.CenterVertically) {
-            Text("‹",Modifier.clickable{onBack()},color=NeonCyan,fontSize=36.sp)
-            Spacer(Modifier.width(8.dp))
+        Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=12.dp),verticalAlignment=Alignment.CenterVertically) {
+            Text("‹",Modifier.clickable{onBack()},color=NeonCyan,fontSize=38.sp)
+            Spacer(Modifier.width(6.dp))
             Column(Modifier.weight(1f)) {
-                Text("GEYSER",color=CyberText,fontSize=27.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace)
+                Text("GEYSER",color=CyberText,fontSize=28.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace)
                 Text("COMPARE & SHOP",color=NeonCyan,fontSize=10.sp,letterSpacing=2.5.sp,fontFamily=FontFamily.Monospace)
             }
-            Text("122001",color=CyberMuted,fontSize=9.sp,fontFamily=FontFamily.Monospace)
+            Surface(shape=RoundedCornerShape(15.dp),color=NeonCyan.copy(alpha=.08f),border=BorderStroke(1.dp,NeonCyan.copy(alpha=.45f))) {
+                Text("Gurugram\n122001",Modifier.padding(horizontal=10.dp,vertical=6.dp),color=CyberText,fontSize=9.sp,textAlign=TextAlign.Center)
+            }
         }
-        Surface(Modifier.padding(horizontal=14.dp).fillMaxWidth(),shape=RoundedCornerShape(22.dp),color=Color(0xFF0B1622),border=BorderStroke(1.dp,NeonCyan.copy(alpha=.45f))) {
-            Box(Modifier.height(170.dp)) {
-                ProductArt(categories.first(),Modifier.fillMaxWidth().padding(top=18.dp).height(135.dp))
-                Column(Modifier.padding(16.dp)) {
-                    Text("FIND YOUR GEYSER",color=CyberText,fontSize=24.sp,fontWeight=FontWeight.Black)
-                    Text("Select specifications to find the exact model.",color=CyberMuted,fontSize=10.sp)
+
+        Surface(Modifier.padding(horizontal=12.dp).fillMaxWidth(),shape=RoundedCornerShape(22.dp),
+            color=Color(0xFF0B1622),border=BorderStroke(1.dp,NeonCyan.copy(alpha=.55f))) {
+            Column(Modifier.padding(12.dp)) {
+                Row(verticalAlignment=Alignment.CenterVertically) {
+                    Column(Modifier.weight(1.15f)) {
+                        Text("FIND YOUR GEYSER",color=CyberText,fontSize=23.sp,fontWeight=FontWeight.Black)
+                        Text("Select specifications to find the exact model.",color=CyberMuted,fontSize=10.sp)
+                    }
+                    ProductArt(categories.first(),Modifier.weight(.85f).height(105.dp))
+                }
+                Spacer(Modifier.height(4.dp))
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceEvenly) {
+                    listOf("◇" to "Top Brands","₹" to "Best Prices","✓" to "Verified Retailers","▣" to "Compare & Buy").forEach {
+                        Column(horizontalAlignment=Alignment.CenterHorizontally) {
+                            Text(it.first,color=NeonCyan,fontSize=18.sp,fontWeight=FontWeight.Bold)
+                            Text(it.second,color=CyberMuted,fontSize=7.sp)
+                        }
+                    }
                 }
             }
         }
-        Spacer(Modifier.height(14.dp))
-        Text("PRODUCT SPECIFICATIONS",Modifier.padding(horizontal=16.dp),color=CyberMuted,fontSize=9.sp,fontWeight=FontWeight.Bold,letterSpacing=1.4.sp,fontFamily=FontFamily.Monospace)
-        Spacer(Modifier.height(8.dp))
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal=14.dp),horizontalArrangement=Arrangement.spacedBy(7.dp)) {
+
+        Spacer(Modifier.height(10.dp))
+        Row(Modifier.padding(horizontal=16.dp),verticalAlignment=Alignment.CenterVertically) {
+            Text("PRODUCT SPECIFICATIONS",color=CyberMuted,fontSize=8.sp,fontWeight=FontWeight.Bold,letterSpacing=1.4.sp,fontFamily=FontFamily.Monospace)
+            Spacer(Modifier.weight(1f))
+            Text("TAP TO SELECT",color=Gold,fontSize=7.sp,fontFamily=FontFamily.Monospace)
+        }
+        Spacer(Modifier.height(7.dp))
+
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal=12.dp),horizontalArrangement=Arrangement.spacedBy(7.dp)) {
             boxes.forEach { (label,value,opts) ->
                 var expanded by remember(label){mutableStateOf(false)}
-                Box(Modifier.width(118.dp).height(82.dp)) {
-                    Surface(Modifier.fillMaxSize().clickable{expanded=true},shape=RoundedCornerShape(13.dp),color=CyberPanel2,border=BorderStroke(1.dp,Gold.copy(alpha=.5f))) {
+                Box(Modifier.width(116.dp).height(82.dp)) {
+                    Surface(Modifier.fillMaxSize().clickable{expanded=true},shape=RoundedCornerShape(13.dp),color=CyberPanel2,border=BorderStroke(1.dp,Gold.copy(alpha=.55f))) {
                         Column(Modifier.padding(9.dp)) {
                             Text(label.uppercase(),color=Gold,fontSize=7.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Monospace)
-                            Spacer(Modifier.height(6.dp)); Text(value,color=CyberText,fontSize=10.sp,maxLines=1)
-                            Spacer(Modifier.weight(1f)); Text("SELECT  ⌄",color=NeonCyan,fontSize=7.sp,fontFamily=FontFamily.Monospace)
+                            Spacer(Modifier.height(6.dp))
+                            Text(value,color=CyberText,fontSize=10.sp,maxLines=1)
+                            Spacer(Modifier.weight(1f))
+                            Text("SELECT  ⌄",color=NeonCyan,fontSize=7.sp,fontFamily=FontFamily.Monospace)
                         }
                     }
                     DropdownMenu(expanded,{expanded=false},modifier=Modifier.background(CyberPanel2)) {
                         opts.forEach { o ->
                             DropdownMenuItem(text={Text(o,color=CyberText,fontSize=11.sp)},onClick={
-                                when(label){"Brand"->brand=o;"Type"->type=o;"Capacity"->capacity=o;"Star Rating"->rating=o;"Power"->power=o}
+                                when(label){"Brand"->brand=o;"Type"->type=o;"Capacity"->capacity=o;"Star Rating"->rating=o;"Power"->power=o;"Pressure"->pressure=o}
                                 expanded=false
                             })
                         }
@@ -514,20 +546,41 @@ fun GeyserScreen(onBack: () -> Unit) {
                 }
             }
         }
-        Spacer(Modifier.height(12.dp))
-        Button(onClick={searched=true},Modifier.padding(horizontal=14.dp).fillMaxWidth().height(52.dp),shape=RoundedCornerShape(15.dp),colors=ButtonDefaults.buttonColors(containerColor=NeonCyan,contentColor=Color.Black)) {
-            Text("⌕  FIND EXACT GEYSER",fontSize=13.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace)
+
+        Spacer(Modifier.height(9.dp))
+        Button(onClick={searched=true},Modifier.padding(horizontal=12.dp).fillMaxWidth().height(52.dp),
+            shape=RoundedCornerShape(15.dp),colors=ButtonDefaults.buttonColors(containerColor=NeonCyan,contentColor=Color.Black)) {
+            Text(if(searched)"✓  EXACT GEYSER MATCHES FOUND" else "⌕  FIND EXACT GEYSER",fontSize=12.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace)
         }
-        Spacer(Modifier.height(16.dp))
-        Text(if(searched)"MATCHES FOR "+capacity+" • "+rating+" • "+power else "POPULAR GEYSERS",Modifier.padding(horizontal=16.dp),color=NeonCyan,fontSize=12.sp,fontWeight=FontWeight.ExtraBold,fontFamily=FontFamily.Monospace)
-        Spacer(Modifier.height(8.dp))
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal=14.dp),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-            GeyserCard("Orient Aquator Neo",Gold); GeyserCard("Bajaj Shield Series",NeonCyan); GeyserCard("Havells Adonia",NeonPurple)
+
+        if(searched) {
+            Spacer(Modifier.height(10.dp))
+            Surface(Modifier.padding(horizontal=12.dp).fillMaxWidth(),shape=RoundedCornerShape(14.dp),
+                color=NeonGreen.copy(alpha=.07f),border=BorderStroke(1.dp,NeonGreen.copy(alpha=.45f))) {
+                Column(Modifier.padding(11.dp)) {
+                    Text("MATCH FILTER APPLIED",color=NeonGreen,fontSize=9.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Monospace)
+                    Text("${if(brand=="Select Brand")"All brands" else brand} • $type • $capacity • $rating • $power • $pressure",
+                        color=CyberText,fontSize=10.sp,fontWeight=FontWeight.Bold)
+                    Text("Showing models that fit the selected specifications.",color=CyberMuted,fontSize=9.sp)
+                }
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+        Row(Modifier.padding(horizontal=16.dp),verticalAlignment=Alignment.CenterVertically) {
+            Text(if(searched)"MATCHED GEYSERS" else "POPULAR GEYSERS",color=NeonCyan,fontSize=12.sp,fontWeight=FontWeight.ExtraBold,fontFamily=FontFamily.Monospace)
+            Spacer(Modifier.weight(1f))
+            Text("View All  ›",color=CyberMuted,fontSize=9.sp)
+        }
+        Spacer(Modifier.height(7.dp))
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal=12.dp),horizontalArrangement=Arrangement.spacedBy(9.dp)) {
+            GeyserCard("Orient Aquator Neo",Gold,"7,499")
+            GeyserCard("Bajaj Shield Series",NeonCyan,"7,299")
+            GeyserCard("Havells Adonia",NeonPurple,"8,199")
         }
         Spacer(Modifier.height(24.dp))
     }
 }
-
 @Composable
 fun HighValueHome(onGeyser: () -> Unit) {
     var selected by remember { mutableStateOf(categories.first()) }
@@ -578,17 +631,41 @@ fun HighValueHome(onGeyser: () -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).background(CyberBg)) {
         CyberHeader()
         Column(Modifier.padding(horizontal = 16.dp)) {
+            Spacer(Modifier.height(10.dp))
+            OutlinedTextField(
+                value = "",
+                onValueChange = {},
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                placeholder = { Text("Search brand, model or product", color = CyberMuted) },
+                leadingIcon = { Text("⌕", color = NeonCyan, fontSize = 25.sp) },
+                trailingIcon = { Text("▣", color = CyberText, fontSize = 18.sp) },
+                shape = RoundedCornerShape(15.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = NeonCyan, unfocusedBorderColor = NeonCyan.copy(alpha=.75f),
+                    focusedTextColor = CyberText, unfocusedTextColor = CyberText, cursorColor = NeonCyan
+                )
+            )
             Spacer(Modifier.height(12.dp))
             Text("CHOOSE CATEGORY", color = CyberMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold,
                 letterSpacing = 1.5.sp, fontFamily = FontFamily.Monospace)
             Spacer(Modifier.height(7.dp))
             CategoryDropdown(selected) { select(it) }
             Spacer(Modifier.height(10.dp))
-            Text("QUICK CATEGORY", color = CyberMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold,
-                letterSpacing = 1.5.sp, fontFamily = FontFamily.Monospace)
+            Text("POPULAR CATEGORIES", color = NeonCyan, fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                letterSpacing = 1.3.sp, fontFamily = FontFamily.Monospace)
             Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                categories.forEach { category -> CategoryCard(category, selected == category) { select(category) } }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                categories.take(3).forEach { category ->
+                    CategoryCard(category, selected == category, { select(category) }, Modifier.weight(1f))
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                categories.drop(3).forEach { category ->
+                    CategoryCard(category, selected == category, { select(category) }, Modifier.weight(1f))
+                }
+                Spacer(Modifier.weight(1f))
             }
             Spacer(Modifier.height(15.dp))
             ProductSpecPanel(selected)
