@@ -1,6 +1,12 @@
 package com.myretailprice.app
 
 import android.os.Bundle
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLEncoder
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
@@ -37,6 +43,33 @@ private val Green=Color(0xFF37F58A)
 private val Gold=Color(0xFFFFC95C)
 private val White=Color(0xFFF2F7FB)
 private val Muted=Color(0xFF9BAEC2)
+
+
+private data class LiveOffer(
+ val retailer:String,val name:String,val brand:String,val price:Double,val mrp:Double?,
+ val matchType:String,val productUrl:String,val available:Boolean
+)
+
+private suspend fun fetchLiveOffers(query:String):Result<List<LiveOffer>>=withContext(Dispatchers.IO){
+ try{
+  val encoded=URLEncoder.encode(query,"UTF-8")
+  val conn=URL("https://my-retail-price-api.dksingh2012.workers.dev/api/compare?q="+encoded+"&pincode=122001").openConnection() as HttpURLConnection
+  conn.requestMethod="GET";conn.connectTimeout=15000;conn.readTimeout=20000
+  val code=conn.responseCode
+  val text=(if(code in 200..299) conn.inputStream else conn.errorStream).bufferedReader().use{it.readText()}
+  if(code !in 200..299) return@withContext Result.failure(Exception("Live search failed ($code)"))
+  val root=JSONObject(text);val arr=root.optJSONArray("offers")?:org.json.JSONArray()
+  val list=buildList{
+   for(i in 0 until arr.length()){
+    val o=arr.getJSONObject(i)
+    add(LiveOffer(o.optString("retailer","Retailer"),o.optString("name",query),o.optString("brand",""),
+      o.optDouble("price",0.0),if(o.has("mrp")&&!o.isNull("mrp"))o.optDouble("mrp") else null,
+      o.optString("match_type","alternative"),o.optString("product_url",""),o.optBoolean("available",true)))
+   }
+  }
+  Result.success(list)
+ }catch(e:Exception){Result.failure(e)}
+}
 
 data class Cat(val name:String,val subtitle:String,val accent:Color)
 private val cats=listOf(
@@ -216,12 +249,13 @@ class MainActivity:ComponentActivity(){
  }
 }
 
-@Composable private fun GeyserScreen(onBack:()->Unit){
+@Composable private fun GeyserScreen(onBack:()->Unit,onCompare:(String)->Unit){
  var brand by remember{mutableStateOf("Select Brand")};var type by remember{mutableStateOf("Storage")};var capacity by remember{mutableStateOf("15L")}
- var rating by remember{mutableStateOf("5★")};var power by remember{mutableStateOf("2000W")};var pressure by remember{mutableStateOf("6 Bar")};var found by remember{mutableStateOf(false)}
+ var rating by remember{mutableStateOf("5★")};var power by remember{mutableStateOf("2000W")};var pressure by remember{mutableStateOf("6 Bar")}
  val rows=listOf(Triple("Brand",brand,listOf("Select Brand","Orient","Bajaj","Racold","Havells")),Triple("Type",type,listOf("Storage","Instant")),
   Triple("Capacity",capacity,listOf("6L","10L","15L","25L")),Triple("Star Rating",rating,listOf("3★","4★","5★")),
   Triple("Power",power,listOf("1500W","2000W","3000W")),Triple("Pressure",pressure,listOf("6 Bar","8 Bar")))
+ val query=buildString{if(brand!="Select Brand")append(brand).append(" ");append(capacity).append(" ");append("geyser ").append(power).append(" ").append(rating)}
  Column(Modifier.fillMaxSize().background(Bg).verticalScroll(rememberScrollState())){
   Row(Modifier.fillMaxWidth().padding(horizontal=17.dp,vertical=12.dp),verticalAlignment=Alignment.CenterVertically){
    Text("‹",Modifier.clickable{onBack()},color=Cyan,fontSize=40.sp);Spacer(Modifier.width(5.dp))
@@ -232,85 +266,46 @@ class MainActivity:ComponentActivity(){
    GeyserHero();Spacer(Modifier.height(27.dp))
    Row(verticalAlignment=Alignment.CenterVertically){Text("PRODUCT SPECIFICATIONS",color=Muted,fontSize=9.sp,letterSpacing=1.5.sp,fontFamily=FontFamily.Monospace);Spacer(Modifier.weight(1f));Text("TAP TO SELECT",color=Gold,fontSize=8.sp,fontFamily=FontFamily.Monospace)}
    Spacer(Modifier.height(10.dp))
-   Column(verticalArrangement=Arrangement.spacedBy(9.dp)){rows.chunked(2).forEach{pair->Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(9.dp)){pair.forEach{(label,value,opts)->Box(Modifier.weight(1f)){SelectBox(label,value,opts,{v->when(label){"Brand"->brand=v;"Type"->type=v;"Capacity"->capacity=v;"Star Rating"->rating=v;"Power"->power=v;"Pressure"->pressure=v};found=false})}};if(pair.size==1)Spacer(Modifier.weight(1f))}}}
+   Column(verticalArrangement=Arrangement.spacedBy(9.dp)){rows.chunked(2).forEach{pair->Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(9.dp)){pair.forEach{(label,value,opts)->Box(Modifier.weight(1f)){SelectBox(label,value,opts,{v->when(label){"Brand"->brand=v;"Type"->type=v;"Capacity"->capacity=v;"Star Rating"->rating=v;"Power"->power=v;"Pressure"->pressure=v}})}};if(pair.size==1)Spacer(Modifier.weight(1f))}}}
    Spacer(Modifier.height(18.dp))
-   Button(onClick={found=true},Modifier.fillMaxWidth().height(58.dp),shape=RoundedCornerShape(18.dp),colors=ButtonDefaults.buttonColors(containerColor=Cyan,contentColor=Color.Black)){
-    Text(if(found)"✓  EXACT GEYSER MATCHES FOUND" else "⌕  FIND EXACT GEYSER",fontSize=12.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace)}
+   Button(onClick={onCompare(query)},Modifier.fillMaxWidth().height(58.dp),shape=RoundedCornerShape(18.dp),colors=ButtonDefaults.buttonColors(containerColor=Cyan,contentColor=Color.Black)){
+    Text("⌕  FIND EXACT GEYSER",fontSize=12.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace)}
    Spacer(Modifier.height(25.dp))
-   Row(verticalAlignment=Alignment.CenterVertically){Text(if(found)"MATCHED GEYSERS" else "POPULAR GEYSERS",color=Cyan,fontSize=13.sp,fontWeight=FontWeight.ExtraBold,fontFamily=FontFamily.Monospace);Spacer(Modifier.weight(1f));Text("View All  ›",color=Muted,fontSize=9.sp)}
+   Row(verticalAlignment=Alignment.CenterVertically){Text("POPULAR GEYSERS",color=Cyan,fontSize=13.sp,fontWeight=FontWeight.ExtraBold,fontFamily=FontFamily.Monospace);Spacer(Modifier.weight(1f));Text("Live search  •  122001",color=Muted,fontSize=8.sp)}
    Spacer(Modifier.height(9.dp))
-   if(found){Surface(Modifier.fillMaxWidth(),shape=RoundedCornerShape(14.dp),color=Green.copy(.06f),border=BorderStroke(1.dp,Green.copy(.4f))){Text((if(brand=="Select Brand")"All brands" else brand)+" • "+type+" • "+capacity+" • "+rating+" • "+power+" • "+pressure,Modifier.padding(11.dp),color=White,fontSize=9.sp)};Spacer(Modifier.height(10.dp))}
-   Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(10.dp)){GeyserCard("Orient Aquator Neo","7,499",Gold){found=true};GeyserCard("Bajaj Shield Series","7,299",Cyan){found=true};GeyserCard("Havells Adonia","8,199",Purple){found=true}}
+   Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(10.dp)){GeyserCard("Orient Aquator Neo","7,499",Gold){onCompare("Orient Aquator Neo 15L")};GeyserCard("Bajaj Shield Series","7,299",Cyan){onCompare("Bajaj Shield Series 15L")};GeyserCard("Havells Adonia","8,199",Purple){onCompare("Havells Adonia 15L")}}
    Spacer(Modifier.height(25.dp))
   }
  }
 }
 
-@Composable private fun GenericCategoryScreen(category:String,onBack:()->Unit){
- var found by remember{mutableStateOf(false)}
- val title=when(category){"MOBILE"->"MOBILE";"TV"->"TV";"AC"->"AIR CONDITIONER";"FRIDGE"->"REFRIGERATOR";else->category}
- val specs=when(category){
-  "MOBILE"->listOf("Brand" to listOf("Apple","Samsung","OnePlus","Xiaomi"),"Model" to listOf("Galaxy S25 Ultra","iPhone 17","OnePlus 13"),"RAM" to listOf("8GB","12GB","16GB"),"Storage" to listOf("128GB","256GB","512GB"),"Variant" to listOf("Black","Blue","Silver"))
-  "TV"->listOf("Brand" to listOf("Sony","Samsung","LG","TCL"),"Size" to listOf("43 inch","50 inch","55 inch","65 inch"),"Panel" to listOf("LED","QLED","OLED"),"Resolution" to listOf("4K","Full HD"),"Refresh" to listOf("60Hz","120Hz"))
-  "AC"->listOf("Brand" to listOf("Daikin","LG","Voltas","Carrier"),"Capacity" to listOf("1 Ton","1.5 Ton","2 Ton"),"Star Rating" to listOf("3★","4★","5★"),"Type" to listOf("Split","Window"),"Inverter" to listOf("Inverter","Non-Inverter"))
-  else->listOf("Brand" to listOf("LG","Samsung","Whirlpool","Haier"),"Capacity" to listOf("190L","240L","300L","350L"),"Type" to listOf("Double Door","Single Door"),"Star Rating" to listOf("2★","3★","4★","5★"),"Compressor" to listOf("Inverter","Digital Inverter"))
- }
- var values by remember{mutableStateOf(specs.associate{it.first to it.second.first()})}
+@Composable private fun CompareScreen(query:String,onBack:()->Unit){
+ var loading by remember(query){mutableStateOf(true)};var error by remember(query){mutableStateOf<String?>(null)};var offers by remember(query){mutableStateOf<List<LiveOffer>>(emptyList())}
+ LaunchedEffect(query){val r=fetchLiveOffers(query);r.onSuccess{offers=it;error=null}.onFailure{error=it.message};loading=false}
  Column(Modifier.fillMaxSize().background(Bg).verticalScroll(rememberScrollState())){
-  Row(Modifier.fillMaxWidth().padding(17.dp),verticalAlignment=Alignment.CenterVertically){
-   Text("‹",Modifier.clickable{onBack()},color=Cyan,fontSize=40.sp);Spacer(Modifier.width(6.dp))
-   Column(Modifier.weight(1f)){Text(title,color=White,fontSize=27.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace);Text("C O M P A R E  &  S H O P",color=Cyan,fontSize=9.sp,letterSpacing=2.5.sp,fontFamily=FontFamily.Monospace)}
-   Surface(shape=RoundedCornerShape(16.dp),color=Color(0xFF071A2A),border=BorderStroke(1.dp,Cyan)){Column(Modifier.padding(9.dp),horizontalAlignment=Alignment.CenterHorizontally){Text("Gurugram",color=White,fontSize=9.sp);Text("122001",color=Cyan,fontSize=10.sp)}}
-  }
+  Row(Modifier.fillMaxWidth().padding(17.dp),verticalAlignment=Alignment.CenterVertically){Text("‹",Modifier.clickable{onBack()},color=Cyan,fontSize=40.sp);Spacer(Modifier.width(8.dp));Column{Text("LIVE COMPARISON",color=White,fontSize=23.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace);Text("Gurugram • 122001",color=Cyan,fontSize=9.sp,letterSpacing=1.8.sp,fontFamily=FontFamily.Monospace)}}
   Column(Modifier.padding(horizontal=14.dp)){
-   Surface(Modifier.fillMaxWidth(),shape=RoundedCornerShape(22.dp),color=Panel,border=BorderStroke(1.3.dp,Cyan.copy(.5f))){
-    Row(Modifier.padding(16.dp),verticalAlignment=Alignment.CenterVertically){
-     Column(Modifier.weight(1f)){Text("FIND YOUR",color=White,fontSize=23.sp,fontWeight=FontWeight.Black);Text(title,color=Cyan,fontSize=23.sp,fontWeight=FontWeight.Black);Spacer(Modifier.height(7.dp));Text("Select specifications to find the exact model.",color=Muted,fontSize=10.sp,lineHeight=18.sp)}
-     Art(when(category){"MOBILE"->cats[1];"TV"->cats[2];"AC"->cats[3];else->cats[4]},Modifier.weight(.8f).height(125.dp))
+   Surface(Modifier.fillMaxWidth(),shape=RoundedCornerShape(18.dp),color=Panel,border=BorderStroke(1.dp,Cyan.copy(.5f))){Column(Modifier.padding(15.dp)){Text("YOUR SEARCH",color=Muted,fontSize=8.sp,fontFamily=FontFamily.Monospace);Spacer(Modifier.height(6.dp));Text(query,color=White,fontSize=16.sp,fontWeight=FontWeight.Bold)}}
+   Spacer(Modifier.height(15.dp))
+   when{
+    loading->Column(Modifier.fillMaxWidth().padding(35.dp),horizontalAlignment=Alignment.CenterHorizontally){CircularProgressIndicator(color=Cyan);Spacer(Modifier.height(12.dp));Text("Searching live retailers…",color=Muted,fontSize=11.sp)}
+    error!=null->Surface(Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp),color=Color(0xFF28131A),border=BorderStroke(1.dp,Color.Red.copy(.5f))){Text("Live search error: "+error,Modifier.padding(15.dp),color=White,fontSize=11.sp)}
+    offers.isEmpty()->Text("No matching live products found. Try a broader model or brand search.",color=Muted,fontSize=12.sp,modifier=Modifier.padding(18.dp))
+    else->{
+     val exact=offers.filter{it.matchType=="exact_match"};val close=offers.filter{it.matchType=="close_match"};val alt=offers.filter{it.matchType=="alternative"}
+     Text(if(exact.isNotEmpty())"EXACT MATCH" else "MATCHED PRODUCTS",color=Cyan,fontSize=13.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace)
+     Spacer(Modifier.height(9.dp))
+     offers.sortedWith(compareBy({it.matchType!="exact_match"},{it.price})).forEach{offer->
+      val accent=when(offer.matchType){"exact_match"->Green;"close_match"->Gold;else->Muted}
+      Surface(Modifier.fillMaxWidth().padding(bottom=9.dp),shape=RoundedCornerShape(17.dp),color=Panel,border=BorderStroke(1.dp,accent.copy(.55f))){Column(Modifier.padding(14.dp)){
+       Row(verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(offer.retailer.uppercase(),color=accent,fontSize=8.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Monospace);Spacer(Modifier.height(5.dp));Text(offer.name,color=White,fontSize=12.sp,fontWeight=FontWeight.Bold);Text(offer.brand,color=Muted,fontSize=9.sp)};Text("₹"+String.format("%.0f",offer.price),color=White,fontSize=20.sp,fontWeight=FontWeight.Black)}
+       Spacer(Modifier.height(8.dp));Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){Surface(shape=RoundedCornerShape(8.dp),color=accent.copy(.08f),border=BorderStroke(1.dp,accent.copy(.3f))){Text(offer.matchType.replace("_"," ").uppercase(),Modifier.padding(horizontal=8.dp,vertical=5.dp),color=accent,fontSize=7.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Monospace)};Text(if(offer.available)"IN STOCK" else "OUT OF STOCK",Modifier.padding(vertical=5.dp),color=if(offer.available)Green else Muted,fontSize=7.sp,fontFamily=FontFamily.Monospace)}}
+      }
+     }
     }
-   }
-   Spacer(Modifier.height(22.dp));Text("PRODUCT SPECIFICATIONS",color=Muted,fontSize=9.sp,letterSpacing=1.5.sp,fontFamily=FontFamily.Monospace);Spacer(Modifier.height(10.dp))
-   Column(verticalArrangement=Arrangement.spacedBy(9.dp)){specs.chunked(2).forEach{pair->Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(9.dp)){pair.forEach{(label,opts)->Box(Modifier.weight(1f)){SelectBox(label,values[label]!!,opts){v->values=values.toMutableMap().also{it[label]=v};found=false}}};if(pair.size==1)Spacer(Modifier.weight(1f))}}}
-   Spacer(Modifier.height(18.dp));Button(onClick={found=true},Modifier.fillMaxWidth().height(58.dp),shape=RoundedCornerShape(18.dp),colors=ButtonDefaults.buttonColors(containerColor=Cyan,contentColor=Color.Black)){Text(if(found)"✓  MATCHES FOUND" else "⌕  FIND EXACT "+title,fontSize=12.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace)}
-   Spacer(Modifier.height(22.dp));Text(if(found)"MATCHED PRODUCTS" else "POPULAR "+title,color=Cyan,fontSize=13.sp,fontWeight=FontWeight.ExtraBold,fontFamily=FontFamily.Monospace);Spacer(Modifier.height(9.dp))
-   Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(10.dp)){
-    listOf("Featured ","Top Value ","Premium ","Best Seller").forEachIndexed{i,n->Surface(Modifier.width(215.dp),shape=RoundedCornerShape(19.dp),color=Panel,border=BorderStroke(1.dp,listOf(Gold,Cyan,Purple,Green)[i])){Column(Modifier.padding(10.dp)){Art(when(category){"MOBILE"->cats[1];"TV"->cats[2];"AC"->cats[3];else->cats[4]},Modifier.height(105.dp));Text(n+title,color=White,fontSize=12.sp,fontWeight=FontWeight.Bold);Text(if(category=="MOBILE")"12GB • 256GB" else if(category=="TV")"55 inch • 4K" else if(category=="AC")"1.5 Ton • 5★" else "300L • 4★",color=Muted,fontSize=9.sp);Spacer(Modifier.height(6.dp));Text("From ₹ 7,499",color=White,fontSize=14.sp,fontWeight=FontWeight.ExtraBold);Spacer(Modifier.height(5.dp));OutlinedButton(onClick={found=true},Modifier.fillMaxWidth().height(35.dp),shape=RoundedCornerShape(10.dp),border=BorderStroke(1.dp,Cyan)){Text("Compare prices →",color=Cyan,fontSize=8.sp)}}}}
    }
    Spacer(Modifier.height(25.dp))
   }
  }
 }
 
-@Composable private fun Footer(tab:Int,onTab:(Int)->Unit){
- Surface(color=Color(0xFF080E18),border=BorderStroke(1.dp,Color(0xFF26364F))){
-  Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(8.dp),horizontalArrangement=Arrangement.SpaceEvenly){
-   listOf("⌂" to "Home","◷" to "History","♡" to "Saved","⚙" to "Settings").forEachIndexed{i,(icon,label)->
-    Surface(Modifier.weight(1f).clickable{onTab(i)},shape=RoundedCornerShape(14.dp),color=if(tab==i)Cyan.copy(.10f) else Color.Transparent){
-     Column(Modifier.padding(vertical=8.dp),horizontalAlignment=Alignment.CenterHorizontally){Text(icon,color=if(tab==i)Cyan else Muted,fontSize=21.sp);Text(label,color=if(tab==i)White else Muted,fontSize=8.sp,fontFamily=FontFamily.Monospace)}
-    }
-   }
-  }
- }
-}
-
-@Composable private fun MainShell(){
- var tab by remember{mutableStateOf(0)}
- var screen by remember{mutableStateOf("HOME")}
- Column(Modifier.fillMaxSize().background(Bg)){
-  Box(Modifier.weight(1f)){
-   when(screen){
-    "HOME"->HomeScreen{screen=if(it=="SEARCH"||it=="ALL")"SEARCH" else it}
-    "GEYSER"->GeyserScreen{screen="HOME"}
-    "MOBILE","TV","AC","FRIDGE"->GenericCategoryScreen(screen){screen="HOME"}
-    "SEARCH"->GenericCategoryScreen("MOBILE"){screen="HOME"}
-    else->Box(Modifier.fillMaxSize().background(Bg),contentAlignment=Alignment.Center){
-      Column(horizontalAlignment=Alignment.CenterHorizontally){
-       Text(when(tab){1->"PRICE HISTORY";2->"SAVED PRODUCTS";else->"SETTINGS"},color=Cyan,fontSize=18.sp,fontFamily=FontFamily.Monospace,fontWeight=FontWeight.Bold)
-       Spacer(Modifier.height(12.dp));Text("Your comparison data and settings will appear here.",color=Muted,fontSize=11.sp,textAlign=TextAlign.Center)
-       Spacer(Modifier.height(18.dp));Button(onClick={screen="HOME"},colors=ButtonDefaults.buttonColors(containerColor=Cyan,contentColor=Color.Black)){Text("← BACK HOME")}}
-    }
-   }
-  }
-  if(screen!="GEYSER")Footer(tab){tab=it;screen=if(it==0)"HOME" else "TAB"}
- }
-}
