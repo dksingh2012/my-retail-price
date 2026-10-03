@@ -68,3 +68,6 @@ The production version must use retailer-authorized APIs, feeds, affiliate/deep 
 
 ## Google Play
 The project targets Android 16 / API 36 for the current 2026 Google Play target requirement.
+
+
+<!-- UI build trigger: revised demo-matched APK -->
