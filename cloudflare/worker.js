@@ -62,19 +62,17 @@ function filterRelevantOffers(offers,q){
   return relevant.map(({_score,_matched,_primaryMatched,_tokenCount,...o})=>o);
 }
 
-async function liveSearch(q,pincode,env){
-  if(!env.QUICKCOMMERCE_API_KEY) return {ok:false,error:"QUICKCOMMERCE_API_KEY is not configured"};
+async function providerSearch(q,pincode,env){
   const url=new URL("https://api.quickcommerceapi.com/v1/groupsearch");
   url.searchParams.set("q",q);
   url.searchParams.set("lat",LAT);
   url.searchParams.set("lon",LON);
   url.searchParams.set("platforms",LIVE_PLATFORMS.join(","));
   url.searchParams.set("pincode",pincode);
-  // Provider documentation recommends the pincode header for location-sensitive inventory.
   const headers={"X-API-Key":env.QUICKCOMMERCE_API_KEY,"x-geolocation-pincode":pincode};
   const res=await fetch(url.toString(),{headers});
   const body=await res.json();
-  if(!res.ok || body.status!=="success") return {ok:false,status:res.status,error:body?.message||body?.error||"QuickCommerce API error"};
+  if(!res.ok || body.status!=="success") return {ok:false,status:res.status,error:body?.message||body?.error||"QuickCommerce API error",offers:[],credits_remaining:body?.credits_remaining};
   const offers=[];
   const results=body?.data?.results||{};
   for(const [platform,items] of Object.entries(results)){
@@ -89,10 +87,48 @@ async function liveSearch(q,pincode,env){
       });
     }
   }
-  const normalizedOffers=offers.map(normalizeProductIdentity);
-  const relevantOffers=filterRelevantOffers(normalizedOffers,q).map(o=>({...o,match_type:classifyMatch(o,q)}));
+  return {ok:true,offers,credits_remaining:body.credits_remaining};
+}
+
+function fallbackQueries(q){
+  const cleaned=q.replace(/\s+/g," ").trim();
+  const tokens=cleaned.split(" ").filter(Boolean);
+  const numeric=tokens.filter(t=>/^\d+(?:\.\d+)?(?:ml|l|litre|liter|g|kg|mg|pcs?|pack|w|kw|inch|in|ton|tb|gb)?$/i.test(t));
+  const words=tokens.filter(t=>!/^\d/.test(t));
+  const brand=words.find(t=>!["geyser","water","heater","storage","instant","tv","mobile","phone","ac","air","conditioner","refrigerator","fridge"].includes(t.toLowerCase()));
+  const capacity=numeric.find(t=>/^(?:\d+(?:\.\d+)?)(?:l|litre|liter|kg|g|ml|inch|in|ton)$/i.test(t));
+  const candidates=[cleaned];
+  if(brand && capacity) candidates.push(brand+" "+capacity);
+  if(brand) candidates.push(brand);
+  if(capacity) candidates.push(capacity+" geyser");
+  return [...new Set(candidates)];
+}
+
+async function liveSearch(q,pincode,env){
+  if(!env.QUICKCOMMERCE_API_KEY) return {ok:false,error:"QUICKCOMMERCE_API_KEY is not configured"};
+  const queries=fallbackQueries(q);
+  const all=[];
+  let credits_remaining=null;
+  for(const searchQ of queries){
+    const r=await providerSearch(searchQ,pincode,env);
+    if(!r.ok) return r;
+    credits_remaining=r.credits_remaining;
+    const normalized=r.offers.map(normalizeProductIdentity);
+    const relevant=filterRelevantOffers(normalized,searchQ);
+    if(relevant.length){
+      all.push(...relevant);
+      break;
+    }
+  }
+  const seen=new Set();
+  const unique=all.filter(o=>{
+    const key=[o.retailer,o.id,o.name,o.price].join("|").toLowerCase();
+    if(seen.has(key)) return false;
+    seen.add(key); return true;
+  });
+  const relevantOffers=unique.map(o=>({...o,match_type:classifyMatch(o,q)}));
   relevantOffers.sort((a,b)=>a.price-b.price);
-  return {ok:true,offers:relevantOffers,credits_remaining:body.credits_remaining};
+  return {ok:true,offers:relevantOffers,credits_remaining};
 }
 
 
