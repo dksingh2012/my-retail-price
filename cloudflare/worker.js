@@ -2,8 +2,9 @@ const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"Co
 const json=(x,s=200)=>new Response(JSON.stringify(x),{status:s,headers:CORS});
 const MARKET="Gurugram";
 const PIN="122001";
-const LAT="28.4608858";
-const LON="77.0287664";
+// Gurugram city-center coordinates; actual serviceability is checked by the provider.
+const LAT="28.4595";
+const LON="77.0266";
 const LIVE_PLATFORMS=["BlinkIt","Zepto","BigBasket","JioMart"];
 
 async function liveSearch(q,pincode,env){
@@ -14,7 +15,9 @@ async function liveSearch(q,pincode,env){
   url.searchParams.set("lon",LON);
   url.searchParams.set("platforms",LIVE_PLATFORMS.join(","));
   url.searchParams.set("pincode",pincode);
-  const res=await fetch(url.toString(),{headers:{"X-API-Key":env.QUICKCOMMERCE_API_KEY}});
+  // Provider documentation recommends the pincode header for location-sensitive inventory.
+  const headers={"X-API-Key":env.QUICKCOMMERCE_API_KEY,"x-geolocation-pincode":pincode};
+  const res=await fetch(url.toString(),{headers});
   const body=await res.json();
   if(!res.ok || body.status!=="success") return {ok:false,status:res.status,error:body?.message||body?.error||"QuickCommerce API error"};
   const offers=[];
@@ -51,7 +54,7 @@ export default {
 
     try{
       if(u.pathname==="/health")
-        return json({ok:true,app:"MY RETAIL PRICE",market:MARKET,pincode:PIN,data_status:"demo"});
+        return json({ok:true,app:"MY RETAIL PRICE",market:MARKET,pincode:PIN,data_status:env.QUICKCOMMERCE_API_KEY?"live_authorized":"demo"});
 
       if(u.pathname==="/api/import" && req.method==="POST"){
         const token=req.headers.get("X-Import-Token")||"";
@@ -143,19 +146,44 @@ export default {
         const body=await req.json();
         const pincode=String(body.pincode||PIN).trim();
         const queries=[...new Set((body.items||[]).map(x=>String(x.q||"").trim()).filter(Boolean))].slice(0,10);
+        if(env.QUICKCOMMERCE_API_KEY){
+          const data=[];
+          for(const q of queries){
+            const live=await liveSearch(q,pincode,env);
+            if(!live.ok) return json({error:live.error,data_status:"live_error"},502);
+            data.push({q,offers:live.offers});
+          }
+          const split=data.filter(x=>x.offers.length).map(x=>({q:x.q,offer:x.offers[0]}));
+          const splitTotal=split.reduce((sum,x)=>sum+(Number(x.offer.price)||0),0);
+          const retailers=[...new Set(data.flatMap(x=>x.offers.map(o=>o.retailer).filter(Boolean)))];
+          const single=[];
+          for(const retailer of retailers){
+            let total=0,complete=true;
+            for(const item of data){
+              const offer=item.offers.find(x=>x.retailer===retailer);
+              if(!offer){complete=false;break;}
+              total+=Number(offer.price)||0;
+            }
+            if(complete) single.push({retailer,total});
+          }
+          single.sort((a,b)=>a.total-b.total);
+          return json({
+            location:MARKET,pincode,data_status:"live_authorized",items:data,
+            cheapest_split_basket:{total:splitTotal,items:split},
+            cheapest_single_store:single[0]||null,
+            unmatched:data.filter(x=>!x.offers.length).map(x=>x.q)
+          });
+        }
         const data=[];
-
         for(const q of queries){
           const r=await env.DB.prepare(
             offerSelect+" WHERE (p.name LIKE ? OR p.brand LIKE ?) AND o.pincode=? AND o.available=1 ORDER BY o.price ASC"
           ).bind("%"+q+"%","%"+q+"%",pincode).all();
           data.push({q,offers:r.results||[]});
         }
-
         const split=data.filter(x=>x.offers.length).map(x=>({q:x.q,offer:x.offers[0]}));
         const splitTotal=split.reduce((sum,x)=>sum+(Number(x.offer.price)||0),0);
         const retailers=[...new Set(split.map(x=>x.offer.retailer).filter(Boolean))];
-
         const single=[];
         for(const retailer of retailers){
           let total=0,complete=true;
@@ -167,7 +195,6 @@ export default {
           if(complete) single.push({retailer,total});
         }
         single.sort((a,b)=>a.total-b.total);
-
         return json({
           location:MARKET,pincode,data_status:"demo",items:data,
           cheapest_split_basket:{total:splitTotal,items:split},
