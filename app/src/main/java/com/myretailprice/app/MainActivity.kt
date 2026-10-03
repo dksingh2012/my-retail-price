@@ -243,9 +243,9 @@ fun CategoryCard(category: ProductCategory, selected: Boolean, onClick: () -> Un
     Surface(modifier.clickable { onClick() }, shape = RoundedCornerShape(18.dp),
         color = if (selected) category.color.copy(alpha = .12f) else CyberPanel,
         border = BorderStroke(1.dp, if (selected) category.color.copy(alpha = .85f) else Color(0xFF233149))) {
-        Column(Modifier.padding(10.dp)) {
-            ProductArt(category, Modifier.height(82.dp))
-            Text(category.name, color = CyberText, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold,
+        Column(Modifier.padding(9.dp)) {
+            ProductArt(category, Modifier.height(58.dp))
+            Text(category.name, color = CyberText, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
                 fontFamily = FontFamily.Monospace)
             Text(category.subtitle, color = CyberMuted, fontSize = 9.sp)
         }
@@ -553,6 +553,7 @@ fun GeyserScreen(onBack: () -> Unit) {
                         opts.forEach { o ->
                             DropdownMenuItem(text={Text(o,color=CyberText,fontSize=11.sp)},onClick={
                                 when(label){"Brand"->brand=o;"Type"->type=o;"Capacity"->capacity=o;"Star Rating"->rating=o;"Power"->power=o;"Pressure"->pressure=o}
+                                searched=false
                                 expanded=false
                             })
                         }
@@ -594,9 +595,7 @@ fun GeyserScreen(onBack: () -> Unit) {
             Triple("Bajaj Shield Series", NeonCyan, "7,299"),
             Triple("Havells Adonia", NeonPurple, "8,199")
         )
-        val matchedGeysers = if (!searched) geysers else if (
-            capacity == "15L" && rating == "5★" && power == "2000W" && type == "Storage"
-        ) geysers else emptyList()
+        val matchedGeysers = if (searched) geysers else emptyList()
 
         Column(Modifier.padding(horizontal=12.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
             if (matchedGeysers.isEmpty()) {
@@ -627,7 +626,7 @@ fun GeyserScreen(onBack: () -> Unit) {
 @Composable
 fun HighValueHome(onGeyser: () -> Unit) {
     var selected by remember { mutableStateOf(categories.first()) }
-    var query by remember { mutableStateOf(categories.first().sample) }
+    var query by remember { mutableStateOf("") }
     var offers by remember { mutableStateOf<List<Offer>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -640,7 +639,7 @@ fun HighValueHome(onGeyser: () -> Unit) {
     fun select(category: ProductCategory) {
         if (category.name == "GEYSER") { onGeyser(); return }
         selected = category
-        query = category.sample
+        query = ""
         offers = emptyList()
         error = null
         live = false
