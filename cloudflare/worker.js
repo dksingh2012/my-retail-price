@@ -73,7 +73,8 @@ async function liveSearch(q,pincode,env){
       });
     }
   }
-  const normalizedOffers=offers.map(normalizeProductIdentity);\n  const relevantOffers=filterRelevantOffers(normalizedOffers,q);
+  const normalizedOffers=offers.map(normalizeProductIdentity);
+  const relevantOffers=filterRelevantOffers(normalizedOffers,q);
   relevantOffers.sort((a,b)=>a.price-b.price);
   return {ok:true,offers:relevantOffers,credits_remaining:body.credits_remaining};
 }
