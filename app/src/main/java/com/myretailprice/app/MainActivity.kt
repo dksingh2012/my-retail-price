@@ -196,14 +196,14 @@ class MainActivity:ComponentActivity(){
  }
 }
 
-@Composable private fun HomeScreen(onCategory:(String)->Unit){
+@Composable private fun HomeScreen(onCategory:(String)->Unit,onSearch:(String)->Unit){
  var query by remember{mutableStateOf("")}
  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).background(Bg)){
   LogoHeader()
   Column(Modifier.padding(horizontal=18.dp)){
    Row(verticalAlignment=Alignment.Bottom){Text("Compare prices. ",color=White,fontSize=24.sp,fontWeight=FontWeight.Black);Text("Buy smarter.",color=Cyan,fontSize=24.sp,fontWeight=FontWeight.Black)}
    Spacer(Modifier.height(6.dp));Text("Find the exact model and compare verified retailer prices.",color=Color(0xFFBED3E5),fontSize=12.sp)
-   Spacer(Modifier.height(22.dp));SearchBox(query,{query=it},{if(query.isNotBlank())onCategory("SEARCH")})
+   Spacer(Modifier.height(22.dp));SearchBox(query,{query=it},{if(query.isNotBlank())onSearch(query)})
    Spacer(Modifier.height(25.dp))
    Row(verticalAlignment=Alignment.CenterVertically){Text("POPULAR CATEGORIES",color=Cyan,fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=1.5.sp,fontFamily=FontFamily.Monospace);Spacer(Modifier.weight(1f));Text("View All  ›",color=Muted,fontSize=9.sp)}
    Spacer(Modifier.height(10.dp))
@@ -309,7 +309,7 @@ class MainActivity:ComponentActivity(){
  }
 }
 
-@Composable private fun GenericCategoryScreen(category:String,onBack:()->Unit){
+@Composable private fun GenericCategoryScreen(category:String,onBack:()->Unit,onCompare:(String)->Unit){
  var found by remember{mutableStateOf(false)}
  val title=when(category){"MOBILE"->"MOBILE";"TV"->"TV";"AC"->"AIR CONDITIONER";"FRIDGE"->"REFRIGERATOR";else->category}
  val specs=when(category){
@@ -334,10 +334,10 @@ class MainActivity:ComponentActivity(){
    }
    Spacer(Modifier.height(22.dp));Text("PRODUCT SPECIFICATIONS",color=Muted,fontSize=9.sp,letterSpacing=1.5.sp,fontFamily=FontFamily.Monospace);Spacer(Modifier.height(10.dp))
    Column(verticalArrangement=Arrangement.spacedBy(9.dp)){specs.chunked(2).forEach{pair->Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(9.dp)){pair.forEach{(label,opts)->Box(Modifier.weight(1f)){SelectBox(label,values[label]!!,opts){v->values=values.toMutableMap().also{it[label]=v};found=false}}};if(pair.size==1)Spacer(Modifier.weight(1f))}}}
-   Spacer(Modifier.height(18.dp));Button(onClick={found=true},Modifier.fillMaxWidth().height(58.dp),shape=RoundedCornerShape(18.dp),colors=ButtonDefaults.buttonColors(containerColor=Cyan,contentColor=Color.Black)){Text(if(found)"✓  MATCHES FOUND" else "⌕  FIND EXACT "+title,fontSize=12.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace)}
+   Spacer(Modifier.height(18.dp));val liveQuery=buildString{values.forEach{(k,v)->append(v).append(" ")}append(title)}.trim();Button(onClick={if(liveQuery.isNotBlank()){found=true;onCompare(liveQuery)}},Modifier.fillMaxWidth().height(58.dp),shape=RoundedCornerShape(18.dp),colors=ButtonDefaults.buttonColors(containerColor=Cyan,contentColor=Color.Black)){Text(if(found)"✓  LIVE RESULTS" else "⌕  FIND EXACT "+title,fontSize=12.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace)}
    Spacer(Modifier.height(22.dp));Text(if(found)"MATCHED PRODUCTS" else "POPULAR "+title,color=Cyan,fontSize=13.sp,fontWeight=FontWeight.ExtraBold,fontFamily=FontFamily.Monospace);Spacer(Modifier.height(9.dp))
    Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(10.dp)){
-    listOf("Featured ","Top Value ","Premium ","Best Seller").forEachIndexed{i,n->Surface(Modifier.width(215.dp),shape=RoundedCornerShape(19.dp),color=Panel,border=BorderStroke(1.dp,listOf(Gold,Cyan,Purple,Green)[i])){Column(Modifier.padding(10.dp)){Art(when(category){"MOBILE"->cats[1];"TV"->cats[2];"AC"->cats[3];else->cats[4]},Modifier.height(105.dp));Text(n+title,color=White,fontSize=12.sp,fontWeight=FontWeight.Bold);Text(if(category=="MOBILE")"12GB • 256GB" else if(category=="TV")"55 inch • 4K" else if(category=="AC")"1.5 Ton • 5★" else "300L • 4★",color=Muted,fontSize=9.sp);Spacer(Modifier.height(6.dp));Text("From ₹ 7,499",color=White,fontSize=14.sp,fontWeight=FontWeight.ExtraBold);Spacer(Modifier.height(5.dp));OutlinedButton(onClick={found=true},Modifier.fillMaxWidth().height(35.dp),shape=RoundedCornerShape(10.dp),border=BorderStroke(1.dp,Cyan)){Text("Compare prices →",color=Cyan,fontSize=8.sp)}}}}
+    listOf("Featured ","Top Value ","Premium ","Best Seller").forEachIndexed{i,n->Surface(Modifier.width(215.dp),shape=RoundedCornerShape(19.dp),color=Panel,border=BorderStroke(1.dp,listOf(Gold,Cyan,Purple,Green)[i])){Column(Modifier.padding(10.dp)){Art(when(category){"MOBILE"->cats[1];"TV"->cats[2];"AC"->cats[3];else->cats[4]},Modifier.height(105.dp));Text(n+title,color=White,fontSize=12.sp,fontWeight=FontWeight.Bold);Text(if(category=="MOBILE")"12GB • 256GB" else if(category=="TV")"55 inch • 4K" else if(category=="AC")"1.5 Ton • 5★" else "300L • 4★",color=Muted,fontSize=9.sp);Spacer(Modifier.height(6.dp));Text("From ₹ 7,499",color=White,fontSize=14.sp,fontWeight=FontWeight.ExtraBold);Spacer(Modifier.height(5.dp));OutlinedButton(onClick={onCompare((n+title+" "+values.values.joinToString(" ")).trim())},Modifier.fillMaxWidth().height(35.dp),shape=RoundedCornerShape(10.dp),border=BorderStroke(1.dp,Cyan)){Text("Compare prices →",color=Cyan,fontSize=8.sp)}}}}
    }
    Spacer(Modifier.height(25.dp))
   }
@@ -363,10 +363,13 @@ class MainActivity:ComponentActivity(){
  Column(Modifier.fillMaxSize().background(Bg)){
   Box(Modifier.weight(1f)){
    when(screen){
-    "HOME"->HomeScreen{screen=if(it=="SEARCH"||it=="ALL")"SEARCH" else it}
+    "HOME"->HomeScreen(
+      onCategory={it->screen=if(it=="SEARCH"||it=="ALL")"SEARCH" else it},
+      onSearch={q->compareQuery=q;screen="COMPARE"}
+    )
     "GEYSER"->GeyserScreen({screen="HOME"}){q->compareQuery=q;screen="COMPARE"}
-    "MOBILE","TV","AC","FRIDGE"->GenericCategoryScreen(screen){screen="HOME"}
-    "SEARCH"->GenericCategoryScreen("MOBILE"){screen="HOME"}
+    "MOBILE","TV","AC","FRIDGE"->GenericCategoryScreen(screen,{screen="HOME"}){q->compareQuery=q;screen="COMPARE"}
+    "SEARCH"->Box(Modifier.fillMaxSize().background(Bg)){LaunchedEffect(Unit){compareQuery=compareQuery;if(compareQuery.isNotBlank())screen="COMPARE"}}
     "COMPARE"->CompareScreen(compareQuery){screen="HOME"}
     else->Box(Modifier.fillMaxSize().background(Bg),contentAlignment=Alignment.Center){
       Column(horizontalAlignment=Alignment.CenterHorizontally){
