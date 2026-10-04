@@ -100,7 +100,17 @@ function fallbackQueries(q){
   const candidates=[cleaned];
   if(brand && capacity) candidates.push(brand+" "+capacity);
   if(brand) candidates.push(brand);
-  if(capacity) candidates.push(capacity+" geyser");
+  if(capacity && /geyser|water|heater/i.test(cleaned)) candidates.push(capacity+" geyser");
+  // Last-resort category search: if the exact brand/model is not indexed by
+  // the provider, return relevant category alternatives instead of a blank
+  // comparison screen.
+  const category =
+    /geyser|water\s*heater|water\s*heating/i.test(cleaned) ? "geyser" :
+    /refrigerator|fridge/i.test(cleaned) ? "refrigerator" :
+    /air\s*conditioner|\bac\b/i.test(cleaned) ? "air conditioner" :
+    /television|\btv\b/i.test(cleaned) ? "tv" :
+    /mobile|phone|smartphone/i.test(cleaned) ? "mobile phone" : "";
+  if(category) candidates.push(category);
   return [...new Set(candidates)];
 }
 
@@ -114,7 +124,15 @@ async function liveSearch(q,pincode,env){
     if(!r.ok) return r;
     credits_remaining=r.credits_remaining;
     const normalized=r.offers.map(normalizeProductIdentity);
-    const relevant=filterRelevantOffers(normalized,searchQ);
+    let relevant=filterRelevantOffers(normalized,searchQ);
+
+    // For a category-only fallback, keep the provider's category results.
+    // The user still sees match_type=alternative unless brand/model/capacity
+    // matches the original query.
+    if(!relevant.length && /^(geyser|refrigerator|air conditioner|tv|mobile phone)$/.test(searchQ.toLowerCase())){
+      relevant=normalized.slice(0,30);
+    }
+
     if(relevant.length){
       all.push(...relevant);
       break;
