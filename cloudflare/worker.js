@@ -37,58 +37,88 @@ function classifyMatch(o,q){
 }
 
 function filterRelevantOffers(offers,q){
-  const tokens=q.toLowerCase().replace(/[^a-z0-9.]+/g," ").trim().split(/\\s+/).filter(Boolean);
+  const tokens=q.toLowerCase().replace(/[^a-z0-9.]+/g," ").trim().split(/\s+/).filter(Boolean);
   if(!tokens.length) return offers;
   const scored=offers.map(o=>{
     const text=[o.name,o.brand,o.pack].filter(Boolean).join(" ").toLowerCase();
     let score=0, matched=0;
     for(const token of tokens){
-      const numeric=/^\\d+(?:\\.\\d+)?(?:ml|l|g|kg|mg|pcs?|pack)?$/.test(token);
+      const numeric=/^\d+(?:\.\d+)?(?:ml|l|g|kg|mg|pcs?|pack|w|kw|inch|in|ton|tb|gb)?$/i.test(token);
       if(text.includes(token)){ matched++; score += numeric ? 2 : 5; }
       else if(numeric){
-        const n=token.match(/^(\\d+(?:\\.\\d+)?)(ml|l|g|kg|mg|pcs?|pack)?$/);
+        const n=token.match(/^(\d+(?:\.\d+)?)(ml|l|g|kg|mg|pcs?|pack|w|kw|inch|in|ton|tb|gb)?$/i);
         if(n && text.includes(n[1])){ matched++; score += 1; }
       }
     }
-    // Product-name/brand matches are mandatory. This prevents results such as
-    // "onion" appearing for a "ghee" search just because the provider returned it.
-    const primary=tokens.filter(t=>!/^\\d/.test(t));
+    const primary=tokens.filter(t=>!/^\d/.test(t));
     const primaryMatched=primary.filter(t=>text.includes(t)).length;
     return {...o,_score:score,_matched:matched,_primaryMatched:primaryMatched,_tokenCount:tokens.length};
   });
-  const primaryCount=tokens.filter(t=>!/^\\d/.test(t)).length;
+  const primaryCount=tokens.filter(t=>!/^\d/.test(t)).length;
   const relevant=scored.filter(x=>x._primaryMatched===primaryCount && x._matched>=Math.min(tokens.length,primaryCount));
   relevant.sort((a,b)=>b._score-a._score || a.price-b.price);
   return relevant.map(({_score,_matched,_primaryMatched,_tokenCount,...o})=>o);
 }
 
-async function providerSearch(q,pincode,env){
-  const url=new URL("https://api.quickcommerceapi.com/v1/groupsearch");
+
+
+async function providerSearch(q,pincode,env,platform){
+  const url=new URL("https://api.quickcommerceapi.com/v1/search");
   url.searchParams.set("q",q);
   url.searchParams.set("lat",LAT);
   url.searchParams.set("lon",LON);
-  url.searchParams.set("platforms",LIVE_PLATFORMS.join(","));
-  url.searchParams.set("pincode",pincode);
-  const headers={"X-API-Key":env.QUICKCOMMERCE_API_KEY,"x-geolocation-pincode":pincode};
-  const res=await fetch(url.toString(),{headers});
-  const body=await res.json();
-  if(!res.ok || body.status!=="success") return {ok:false,status:res.status,error:body?.message||body?.error||"QuickCommerce API error",offers:[],credits_remaining:body?.credits_remaining};
+  url.searchParams.set("platform",platform);
+  if(pincode) url.searchParams.set("pincode",pincode);
+  const headers={"X-API-Key":env.QUICKCOMMERCE_API_KEY};
+  if(["JioMart","Minutes","DMart"].includes(platform)) headers["x-geolocation-pincode"]=pincode;
+
+  let res;
+  try{
+    res=await fetch(url.toString(),{headers});
+  }catch(e){
+    return {ok:false,status:0,error:"Provider network error: "+String(e?.message||e),offers:[]};
+  }
+
+  const raw=await res.text();
+  let body={};
+  try{ body=raw?JSON.parse(raw):{}; }
+  catch(e){
+    return {ok:false,status:res.status,error:"Provider returned non-JSON response ("+res.status+")",offers:[]};
+  }
+
+  if(!res.ok || body.status!=="success"){
+    return {ok:false,status:res.status,error:body?.message||body?.error||("QuickCommerce API error "+res.status),offers:[],credits_remaining:body?.credits_remaining};
+  }
+
+  const products=Array.isArray(body?.data?.products) ? body.data.products :
+                 Array.isArray(body?.data?.results) ? body.data.results :
+                 Array.isArray(body?.results) ? body.results : [];
   const offers=[];
-  const results=body?.data?.results||{};
-  for(const [platform,items] of Object.entries(results)){
-    for(const item of (Array.isArray(items)?items:[])){
-      const price=Number(item.offer_price);
-      if(!Number.isFinite(price)) continue;
-      offers.push({
-        id:String(item.id||""),name:String(item.name||q),brand:String(item.brand||""),pack:String(item.quantity||""),
-        retailer:String(item.platform?.name||platform),price,mrp:Number.isFinite(Number(item.mrp))?Number(item.mrp):null,
-        pincode,available:item.available!==false,source:"QuickCommerce API",data_status:"live_authorized",
-        product_url:String(item.deeplink||""),updated_at:new Date().toISOString(),sla:String(item.platform?.sla||"")
-      });
-    }
+  for(const item of products){
+    const price=Number(item.offer_price ?? item.price);
+    if(!Number.isFinite(price)) continue;
+    const p=item.platform;
+    offers.push({
+      id:String(item.id||item.item_id||""),
+      name:String(item.name||q),
+      brand:String(item.brand||""),
+      pack:String(item.quantity||item.weight||""),
+      retailer:String((p&&typeof p==="object"?p.name:p)||platform),
+      price,
+      mrp:Number.isFinite(Number(item.mrp))?Number(item.mrp):null,
+      pincode,
+      available:item.available!==false && item.in_stock!==false,
+      source:"QuickCommerce API",
+      data_status:"live_authorized",
+      product_url:String(item.deeplink||item.product_url||""),
+      updated_at:new Date().toISOString(),
+      sla:String((p&&typeof p==="object"?p.sla:"")||"")
+    });
   }
   return {ok:true,offers,credits_remaining:body.credits_remaining};
 }
+
+
 
 function fallbackQueries(q){
   const cleaned=q.replace(/\s+/g," ").trim();
@@ -116,38 +146,46 @@ function fallbackQueries(q){
 
 async function liveSearch(q,pincode,env){
   if(!env.QUICKCOMMERCE_API_KEY) return {ok:false,error:"QUICKCOMMERCE_API_KEY is not configured"};
-  const queries=fallbackQueries(q);
+
+  // Use the individual search endpoint so one retailer's upstream failure
+  // cannot break the entire comparison. Four platforms keep the free trial
+  // usable while still giving a meaningful comparison.
+  const platforms=["Amazon","Flipkart","BlinkIt","Zepto"];
   const all=[];
+  const errors=[];
   let credits_remaining=null;
-  for(const searchQ of queries){
-    const r=await providerSearch(searchQ,pincode,env);
-    if(!r.ok) return r;
-    credits_remaining=r.credits_remaining;
+
+  for(const platform of platforms){
+    const r=await providerSearch(q,pincode,env,platform);
+    if(r.credits_remaining!=null) credits_remaining=r.credits_remaining;
+    if(!r.ok){ errors.push(platform+": "+r.error); continue; }
+
     const normalized=r.offers.map(normalizeProductIdentity);
-    let relevant=filterRelevantOffers(normalized,searchQ);
-
-    // For a category-only fallback, keep the provider's category results.
-    // The user still sees match_type=alternative unless brand/model/capacity
-    // matches the original query.
-    if(!relevant.length && /^(geyser|refrigerator|air conditioner|tv|mobile phone)$/.test(searchQ.toLowerCase())){
-      relevant=normalized.slice(0,30);
-    }
-
-    if(relevant.length){
-      all.push(...relevant);
-      break;
-    }
+    const relevant=filterRelevantOffers(normalized,q);
+    all.push(...(relevant.length ? relevant : normalized.slice(0,20)));
   }
+
   const seen=new Set();
   const unique=all.filter(o=>{
     const key=[o.retailer,o.id,o.name,o.price].join("|").toLowerCase();
     if(seen.has(key)) return false;
     seen.add(key); return true;
   });
+
   const relevantOffers=unique.map(o=>({...o,match_type:classifyMatch(o,q)}));
-  relevantOffers.sort((a,b)=>a.price-b.price);
-  return {ok:true,offers:relevantOffers,credits_remaining};
+  relevantOffers.sort((a,b)=>{
+    const rank=x=>x==="exact_match"?0:x==="close_match"?1:2;
+    return rank(a.match_type)-rank(b.match_type) || a.price-b.price;
+  });
+
+  if(!relevantOffers.length && errors.length===platforms.length){
+    return {ok:false,error:"All live retailer searches failed: "+errors.join(" | "),credits_remaining};
+  }
+
+  return {ok:true,offers:relevantOffers,credits_remaining,retailer_errors:errors};
 }
+
+
 
 
 const offerSelect=`
