@@ -277,8 +277,24 @@ export default {
         if(!q) return json({error:"q is required"},400);
         if(env.QUICKCOMMERCE_API_KEY){
           const live=await liveSearch(q,pincode,env);
-          if(!live.ok) return json({query:q,location:MARKET,pincode,offers:[],cheapest:null,data_status:"live_error",error:live.error},502);
-          return json({query:q,location:MARKET,pincode,offers:live.offers,cheapest:live.offers[0]||null,data_status:"live_authorized",credits_remaining:live.credits_remaining});
+          if(live.ok && live.offers?.length){
+            return json({query:q,location:MARKET,pincode,offers:live.offers,cheapest:live.offers[0]||null,data_status:"live_authorized",credits_remaining:live.credits_remaining,retailer_errors:live.retailer_errors||[]});
+          }
+          // Never leave the app on a blank/502 comparison screen. If the live
+          // provider is temporarily unavailable, use our locally stored
+          // catalogue as a clearly-labelled reference fallback.
+          const fallback=await env.DB.prepare(
+            offerSelect+" WHERE (p.name LIKE ? OR p.brand LIKE ? OR p.pack LIKE ?) AND o.pincode=? AND o.available=1 ORDER BY o.price ASC"
+          ).bind("%"+q+"%","%"+q+"%","%"+q+"%",pincode).all();
+          const fallbackOffers=(fallback.results||[]).map(o=>({...o,match_type:"reference"}));
+          return json({
+            query:q,location:MARKET,pincode,
+            offers:fallbackOffers,
+            cheapest:fallbackOffers[0]||null,
+            data_status:fallbackOffers.length?"reference_fallback":"no_results",
+            live_error:live.error||null,
+            retailer_errors:live.retailer_errors||[]
+          });
         }
         const r=await env.DB.prepare(
           offerSelect+" WHERE (p.name LIKE ? OR p.brand LIKE ?) AND o.pincode=? AND o.available=1 ORDER BY o.price ASC"
