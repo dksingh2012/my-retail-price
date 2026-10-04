@@ -283,17 +283,32 @@ export default {
           // Never leave the app on a blank/502 comparison screen. If the live
           // provider is temporarily unavailable, use our locally stored
           // catalogue as a clearly-labelled reference fallback.
-          const fallback=await env.DB.prepare(
-            offerSelect+" WHERE (p.name LIKE ? OR p.brand LIKE ? OR p.pack LIKE ?) AND o.pincode=? AND o.available=1 ORDER BY o.price ASC"
-          ).bind("%"+q+"%","%"+q+"%","%"+q+"%",pincode).all();
-          const fallbackOffers=(fallback.results||[]).map(o=>({...o,match_type:"reference"}));
+          // Use progressively broader local catalogue queries. This makes the
+          // fallback useful for real searches such as "Orient 15L geyser 2000W 5★":
+          // the full sentence may not exist verbatim in the catalogue, while
+          // "Orient 15L" and "geyser" do.
+          const candidates=fallbackQueries(q);
+          const fallbackMap=new Map();
+          for(const candidate of candidates){
+            const like="%"+candidate+"%";
+            const fallback=await env.DB.prepare(
+              offerSelect+" WHERE (p.name LIKE ? OR p.brand LIKE ? OR p.pack LIKE ?) AND o.pincode=? AND o.available=1 ORDER BY o.price ASC LIMIT 30"
+            ).bind(like,like,like,pincode).all();
+            for(const row of (fallback.results||[])){
+              const key=[row.product_id||row.id,row.retailer,row.price,row.product_url||""].join("|");
+              if(!fallbackMap.has(key)) fallbackMap.set(key,{...row,match_type:"reference"});
+            }
+            if(fallbackMap.size>=12) break;
+          }
+          const fallbackOffers=[...fallbackMap.values()].sort((a,b)=>Number(a.price||0)-Number(b.price||0));
           return json({
             query:q,location:MARKET,pincode,
             offers:fallbackOffers,
             cheapest:fallbackOffers[0]||null,
             data_status:fallbackOffers.length?"reference_fallback":"no_results",
             live_error:live.error||null,
-            retailer_errors:live.retailer_errors||[]
+            retailer_errors:live.retailer_errors||[],
+            fallback_queries:candidates
           });
         }
         const r=await env.DB.prepare(
