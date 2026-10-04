@@ -111,6 +111,7 @@ async function providerSearch(q,pincode,env,platform){
       source:"QuickCommerce API",
       data_status:"live_authorized",
       product_url:String(item.deeplink||item.product_url||""),
+      image_url:String(Array.isArray(item.images)?(item.images[0]||""):(item.image||"")),
       updated_at:new Date().toISOString(),
       sla:String((p&&typeof p==="object"?p.sla:"")||"")
     });
@@ -191,7 +192,7 @@ async function liveSearch(q,pincode,env){
 const offerSelect=`
 SELECT p.id,p.name,p.pack,p.brand,p.unit_value,p.unit,
        o.retailer,o.price,o.mrp,o.pincode,o.available,o.source,
-       o.data_status,o.product_url,o.updated_at
+       o.data_status,o.product_url,o.image_url,o.updated_at
 FROM products p
 JOIN offers o ON o.product_id=p.id
 `;
