@@ -1,6 +1,8 @@
 package com.myretailprice.app
 
 import android.os.Bundle
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -28,6 +30,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -47,8 +51,14 @@ private val Muted=Color(0xFF9BAEC2)
 
 private data class LiveOffer(
  val retailer:String,val name:String,val brand:String,val price:Double,val mrp:Double?,
- val matchType:String,val productUrl:String,val available:Boolean,val dataStatus:String
+ val matchType:String,val productUrl:String,val available:Boolean,val dataStatus:String,val imageUrl:String
 )
+
+@Composable private fun RemoteProductImage(url:String,modifier:Modifier=Modifier){
+ var bitmap by remember(url){mutableStateOf<Bitmap?>(null)}
+ LaunchedEffect(url){if(url.isNotBlank()) bitmap=withContext(Dispatchers.IO){runCatching{URL(url).openStream().use{BitmapFactory.decodeStream(it)}}.getOrNull()}}
+ if(bitmap!=null) androidx.compose.foundation.Image(bitmap!!.asImageBitmap(),null,modifier,contentScale=ContentScale.Fit) else Box(modifier.background(Panel,RoundedCornerShape(12.dp)))
+}
 
 private suspend fun fetchLiveOffers(query:String):Result<List<LiveOffer>> = withContext(Dispatchers.IO){
  try{
@@ -64,7 +74,7 @@ private suspend fun fetchLiveOffers(query:String):Result<List<LiveOffer>> = with
     val o=arr.getJSONObject(i)
     add(LiveOffer(o.optString("retailer","Retailer"),o.optString("name",query),o.optString("brand",""),
       o.optDouble("price",0.0),if(o.has("mrp")&&!o.isNull("mrp"))o.optDouble("mrp") else null,
-      o.optString("match_type","alternative"),o.optString("product_url",""),o.optBoolean("available",true),o.optString("data_status","live_authorized")))
+      o.optString("match_type","alternative"),o.optString("product_url",""),o.optBoolean("available",true),o.optString("data_status","live_authorized"),o.optString("image_url","")))
    }
   }
   Result.success(list)
@@ -163,12 +173,12 @@ class MainActivity:ComponentActivity(){
 }
 
 @Composable private fun CategoryCard(cat:Cat,onClick:()->Unit){
- Surface(Modifier.clickable{onClick()},shape=RoundedCornerShape(20.dp),color=Color(0xFF07111F),border=BorderStroke(1.5.dp,cat.accent.copy(.62f))){
+ Surface(Modifier.height(174.dp).clickable{onClick()},shape=RoundedCornerShape(20.dp),color=Color(0xFF07111F),border=BorderStroke(1.5.dp,cat.accent.copy(.62f))){
   Column(Modifier.padding(8.dp)){
-   Art(cat,Modifier.height(103.dp));Spacer(Modifier.height(6.dp))
+   Box(Modifier.fillMaxWidth().height(108.dp),contentAlignment=Alignment.Center){Art(cat,Modifier.fillMaxSize())}
+   Spacer(Modifier.height(5.dp))
    Row(verticalAlignment=Alignment.CenterVertically){
-    Column(Modifier.weight(1f)){Text(cat.name,color=White,fontSize=13.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace)
-     Spacer(Modifier.height(3.dp));Text(cat.subtitle,color=Muted,fontSize=9.sp)}
+    Text(cat.name,color=White,fontSize=13.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace,modifier=Modifier.weight(1f))
     Text("›",color=cat.accent,fontSize=27.sp,fontWeight=FontWeight.Bold)
    }
   }
@@ -281,7 +291,11 @@ class MainActivity:ComponentActivity(){
      offers.sortedWith(compareBy({it.matchType!="exact_match"},{it.price})).forEach{offer->
       val accent=when(offer.matchType){"exact_match"->Green;"close_match"->Gold;"reference"->Gold;else->Muted}
       Surface(Modifier.fillMaxWidth().padding(bottom=9.dp),shape=RoundedCornerShape(17.dp),color=Panel,border=BorderStroke(1.dp,accent.copy(.55f))){Column(Modifier.padding(14.dp)){
-       Row(verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(offer.retailer.uppercase(),color=accent,fontSize=8.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Monospace);Spacer(Modifier.height(5.dp));Text(offer.name,color=White,fontSize=12.sp,fontWeight=FontWeight.Bold);Text(offer.brand,color=Muted,fontSize=9.sp)};Text("₹"+String.format("%.0f",offer.price),color=White,fontSize=20.sp,fontWeight=FontWeight.Black)}
+       Row(verticalAlignment=Alignment.CenterVertically){
+        if(offer.imageUrl.isNotBlank()) RemoteProductImage(offer.imageUrl,Modifier.size(82.dp).padding(4.dp))
+        Spacer(Modifier.width(9.dp))
+        Column(Modifier.weight(1f)){Text(offer.retailer.uppercase(),color=accent,fontSize=8.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Monospace);Spacer(Modifier.height(4.dp));Text(offer.name,color=White,fontSize=12.sp,fontWeight=FontWeight.Bold);Text(offer.brand,color=Muted,fontSize=9.sp)}
+        Text("₹"+String.format("%.0f",offer.price),color=White,fontSize=19.sp,fontWeight=FontWeight.Black)}
        Spacer(Modifier.height(8.dp));Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){Surface(shape=RoundedCornerShape(8.dp),color=accent.copy(.08f),border=BorderStroke(1.dp,accent.copy(.3f))){Text(if(offer.matchType=="reference")"REFERENCE PRICE" else offer.matchType.replace("_"," ").uppercase(),Modifier.padding(horizontal=8.dp,vertical=5.dp),color=accent,fontSize=7.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Monospace)};Text(if(offer.available)"IN STOCK" else "OUT OF STOCK",Modifier.padding(vertical=5.dp),color=if(offer.available)Green else Muted,fontSize=7.sp,fontFamily=FontFamily.Monospace)}}
       }
      }
