@@ -101,10 +101,9 @@ class MainActivity:ComponentActivity(){
  Row(Modifier.fillMaxWidth().padding(horizontal=18.dp,vertical=14.dp),verticalAlignment=Alignment.Top){
   Column(Modifier.weight(1f)){
    Row(verticalAlignment=Alignment.CenterVertically){
-    Text("▦",color=Cyan,fontSize=24.sp,fontWeight=FontWeight.Black);Spacer(Modifier.width(5.dp))
-    Text("MY RETAIL\nPRICE",style=TextStyle(
+    Text("MY RETAIL PRICE",style=TextStyle(
      brush=Brush.linearGradient(listOf(Color(0xFFFFE9A6),Gold,Color(0xFFFF8A00),White,Cyan,Color(0xFF008CFF))),
-     fontSize=27.sp,lineHeight=28.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace,letterSpacing=1.sp,
+     fontSize=24.sp,lineHeight=27.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace,letterSpacing=0.4.sp,
      shadow=androidx.compose.ui.graphics.Shadow(color=Gold.copy(.65f),offset=Offset(0f,2f),blurRadius=7f)))
    }
    Text("—  C O M P A R E   &   S H O P  —",color=Cyan,fontSize=9.sp,letterSpacing=2.6.sp,fontFamily=FontFamily.Monospace,fontWeight=FontWeight.Bold)
@@ -116,16 +115,6 @@ class MainActivity:ComponentActivity(){
    }
   }
  }
-}
-
-@Composable private fun SearchBox(value:String,onChange:(String)->Unit,onSearch:()->Unit){
- OutlinedTextField(value=value,onValueChange=onChange,modifier=Modifier.fillMaxWidth().height(58.dp),singleLine=true,
-  placeholder={Text("Search brand, model or product",color=Muted,fontSize=15.sp)},
-  leadingIcon={Text("⌕",color=Cyan,fontSize=28.sp)},
-  trailingIcon={Text("⌕",Modifier.clickable{onSearch()},color=Cyan,fontSize=24.sp)},
-  shape=RoundedCornerShape(20.dp),
-  colors=OutlinedTextFieldDefaults.colors(focusedBorderColor=Cyan,unfocusedBorderColor=Cyan.copy(.8f),
-   focusedTextColor=White,unfocusedTextColor=White,cursorColor=Cyan))
 }
 
 @Composable private fun Art(cat:Cat,modifier:Modifier=Modifier){
@@ -186,54 +175,13 @@ class MainActivity:ComponentActivity(){
  }
 }
 
-@Composable private fun HomeSpecs(onSelect:(String,String)->Unit){
- val specs=listOf("BRAND" to "Apple","MODEL" to "Galaxy S25 Ultra","RAM" to "12GB","STORAGE" to "256GB","VARIANT" to "Black")
- Column{
-  Row(verticalAlignment=Alignment.CenterVertically){
-   Text("POPULAR SPECIFICATIONS",color=Muted,fontSize=9.sp,letterSpacing=1.7.sp,fontFamily=FontFamily.Monospace)
-   Spacer(Modifier.weight(1f));Text("TAP TO SELECT",color=Cyan,fontSize=8.sp,fontFamily=FontFamily.Monospace)
-  }
-  Spacer(Modifier.height(8.dp))
-  Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(10.dp)){
-   specs.forEach{(a,b)->Surface(Modifier.width(150.dp).height(104.dp),shape=RoundedCornerShape(17.dp),color=Panel2,border=BorderStroke(1.2.dp,Cyan.copy(.55f))){
-    Column(Modifier.padding(12.dp)){Text(a,color=Cyan,fontSize=8.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Monospace)
-     Spacer(Modifier.height(14.dp));Text(b,color=White,fontSize=12.sp,maxLines=1);Spacer(Modifier.weight(1f));Text("SELECT  ⌄",Modifier.clickable{onSelect(a,b)},color=Cyan,fontSize=7.sp,fontFamily=FontFamily.Monospace)}
-   }}
-  }
- }
-}
-
-@Composable private fun ExactHomePanel(onCompare:()->Unit){
- Surface(Modifier.fillMaxWidth(),shape=RoundedCornerShape(22.dp),color=Panel,border=BorderStroke(1.2.dp,Color(0xFF31405A))){
-  Column(Modifier.padding(17.dp)){
-   Row(verticalAlignment=Alignment.CenterVertically){
-    Column(Modifier.weight(1f)){Text("EXACT PRODUCT MATCH",color=Cyan,fontSize=12.sp,fontWeight=FontWeight.Bold,letterSpacing=1.2.sp,fontFamily=FontFamily.Monospace)
-     Spacer(Modifier.height(5.dp));Text("Brand + Model + Variant",color=White,fontSize=18.sp,fontWeight=FontWeight.ExtraBold)}
-    Surface(shape=RoundedCornerShape(11.dp),color=Green.copy(.08f),border=BorderStroke(1.dp,Green.copy(.5f))){
-     Text("SMART SEARCH",Modifier.padding(horizontal=8.dp,vertical=6.dp),color=Green,fontSize=7.sp,fontFamily=FontFamily.Monospace)}
-   }
-   Spacer(Modifier.height(14.dp))
-   Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){
-    listOf("EXACT MATCH" to Cyan,"REAL PRICE" to Green,"PRICE HISTORY" to Purple).forEach{(t,c)->
-     Surface(Modifier.weight(1f),shape=RoundedCornerShape(12.dp),color=c.copy(.07f),border=BorderStroke(1.dp,c.copy(.35f))){
-      Text(t,Modifier.padding(vertical=11.dp),textAlign=TextAlign.Center,color=c,fontSize=7.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Monospace)}}
-   }
-   Spacer(Modifier.height(13.dp))
-   Button(onClick=onCompare,Modifier.fillMaxWidth().height(51.dp),shape=RoundedCornerShape(16.dp),colors=ButtonDefaults.buttonColors(containerColor=Cyan,contentColor=Color.Black)){
-    Text("⌕  COMPARE & SHOP  ›",fontSize=12.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace)}
-  }
- }
-}
-
-@Composable private fun HomeScreen(onCategory:(String)->Unit,onSearch:(String)->Unit){
- var query by remember{mutableStateOf("")}
+@Composable private fun HomeScreen(onCategory:(String)->Unit){
  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).background(Bg)){
   LogoHeader()
   Column(Modifier.padding(horizontal=18.dp)){
    Row(verticalAlignment=Alignment.Bottom){Text("Compare prices. ",color=White,fontSize=24.sp,fontWeight=FontWeight.Black);Text("Buy smarter.",color=Cyan,fontSize=24.sp,fontWeight=FontWeight.Black)}
    Spacer(Modifier.height(6.dp));Text("Find the exact model and compare verified retailer prices.",color=Color(0xFFBED3E5),fontSize=12.sp)
-   Spacer(Modifier.height(22.dp));SearchBox(query,{query=it},{if(query.isNotBlank())onSearch(query)})
-   Spacer(Modifier.height(25.dp))
+   Spacer(Modifier.height(22.dp))
    Row(verticalAlignment=Alignment.CenterVertically){Text("POPULAR CATEGORIES",color=Cyan,fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=1.5.sp,fontFamily=FontFamily.Monospace);Spacer(Modifier.weight(1f));Surface(shape=RoundedCornerShape(10.dp),color=Gold.copy(.08f),border=BorderStroke(1.dp,Gold.copy(.75f)),modifier=Modifier.clickable{onCategory("ALL")}){
     Text("View All  ›",Modifier.padding(horizontal=9.dp,vertical=5.dp),color=Gold,fontSize=9.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Monospace)}}
    Spacer(Modifier.height(10.dp))
@@ -244,7 +192,7 @@ class MainActivity:ComponentActivity(){
     }
     if(index<cats.chunked(3).lastIndex)Spacer(Modifier.height(9.dp))
    }
-   Spacer(Modifier.height(22.dp));HomeSpecs{a,b->query="$a: $b"};Spacer(Modifier.height(18.dp));ExactHomePanel{onCategory("SEARCH")};Spacer(Modifier.height(28.dp))
+   Spacer(Modifier.height(28.dp))
   }
  }
 }
@@ -406,8 +354,7 @@ class MainActivity:ComponentActivity(){
   Box(Modifier.weight(1f)){
    when(screen){
     "HOME"->HomeScreen(
-      onCategory={it->screen=if(it=="SEARCH"||it=="ALL")"SEARCH" else it},
-      onSearch={q->compareQuery=q;screen="COMPARE"}
+      onCategory={it->screen=if(it=="ALL")"SEARCH" else it}
     )
     "GEYSER"->GeyserScreen({screen="HOME"}){q->compareQuery=q;screen="COMPARE"}
     "MOBILE","TV","AC","FRIDGE","LAPTOP","SMARTWATCH","AIR FRYER","MICROWAVE","TABLET","WASHING MACHINE","WATER PURIFIER"->GenericCategoryScreen(screen,{screen="HOME"}){q->compareQuery=q;screen="COMPARE"}
