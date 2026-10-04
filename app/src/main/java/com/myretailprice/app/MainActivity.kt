@@ -83,7 +83,8 @@ private val cats=listOf(
  Cat("AIR FRYER","Capacity & power",Green),
  Cat("MICROWAVE","Capacity & type",Gold),
  Cat("TABLET","Screen & storage",Cyan),
- Cat("WASHING MACHINE","Capacity & type",Purple)
+ Cat("WASHING MACHINE","Capacity & type",Purple),
+ Cat("WATER PURIFIER","Type & capacity",Green)
 )
 
 class MainActivity:ComponentActivity(){
@@ -102,8 +103,9 @@ class MainActivity:ComponentActivity(){
    Row(verticalAlignment=Alignment.CenterVertically){
     Text("▦",color=Cyan,fontSize=24.sp,fontWeight=FontWeight.Black);Spacer(Modifier.width(5.dp))
     Text("MY RETAIL\nPRICE",style=TextStyle(
-     brush=Brush.horizontalGradient(listOf(Gold,White,Cyan)),fontSize=27.sp,lineHeight=28.sp,
-     fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace,letterSpacing=1.sp))
+     brush=Brush.linearGradient(listOf(Color(0xFFFFE9A6),Gold,Color(0xFFFF8A00),White,Cyan,Color(0xFF008CFF))),
+     fontSize=27.sp,lineHeight=28.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace,letterSpacing=1.sp,
+     shadow=androidx.compose.ui.graphics.Shadow(color=Gold.copy(.65f),offset=Offset(0f,2f),blurRadius=7f)))
    }
    Text("—  C O M P A R E   &   S H O P  —",color=Cyan,fontSize=9.sp,letterSpacing=2.6.sp,fontFamily=FontFamily.Monospace,fontWeight=FontWeight.Bold)
   }
@@ -163,6 +165,8 @@ class MainActivity:ComponentActivity(){
     drawRoundRect(Brush.linearGradient(listOf(Purple,Cyan)),Offset(w*.31f,h*.15f),Size(w*.38f,h*.62f),androidx.compose.ui.geometry.CornerRadius(5f));drawCircle(Color(0xFF101A2A),3f,Offset(w*.50f,h*.85f))}
    "WASHING MACHINE"->{drawRoundRect(Color(0xFFD8E0E8),Offset(w*.22f,h*.10f),Size(w*.56f,h*.78f),androidx.compose.ui.geometry.CornerRadius(16f))
     drawCircle(Color(0xFF243247),34f,Offset(w*.50f,h*.52f));drawCircle(Color(0xFF0B1320),27f,Offset(w*.50f,h*.52f));drawCircle(Green,5f,Offset(w*.33f,h*.20f))}
+   "WATER PURIFIER"->{drawRoundRect(Color(0xFFD8E0E8),Offset(w*.27f,h*.10f),Size(w*.46f,h*.78f),androidx.compose.ui.geometry.CornerRadius(14f))
+    drawRoundRect(Color(0xFF243247),Offset(w*.35f,h*.27f),Size(w*.30f,h*.28f),androidx.compose.ui.geometry.CornerRadius(8f));drawCircle(Cyan,6f,Offset(w*.50f,h*.39f));drawLine(Cyan,Offset(w*.50f,h*.62f),Offset(w*.50f,h*.75f),5f);drawCircle(Cyan,6f,Offset(w*.50f,h*.77f))}
    else->{drawRoundRect(Color(0xFF3C475A),Offset(w*.27f,h*.08f),Size(w*.46f,h*.82f),androidx.compose.ui.geometry.CornerRadius(11f))
     drawLine(Color(0xFF111827),Offset(w*.50f,h*.11f),Offset(w*.50f,h*.87f),4f);drawCircle(Cyan,4f,Offset(w*.62f,h*.27f))}
   }
@@ -230,7 +234,8 @@ class MainActivity:ComponentActivity(){
    Spacer(Modifier.height(6.dp));Text("Find the exact model and compare verified retailer prices.",color=Color(0xFFBED3E5),fontSize=12.sp)
    Spacer(Modifier.height(22.dp));SearchBox(query,{query=it},{if(query.isNotBlank())onSearch(query)})
    Spacer(Modifier.height(25.dp))
-   Row(verticalAlignment=Alignment.CenterVertically){Text("POPULAR CATEGORIES",color=Cyan,fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=1.5.sp,fontFamily=FontFamily.Monospace);Spacer(Modifier.weight(1f));Text("View All  ›",color=Muted,fontSize=9.sp)}
+   Row(verticalAlignment=Alignment.CenterVertically){Text("POPULAR CATEGORIES",color=Cyan,fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=1.5.sp,fontFamily=FontFamily.Monospace);Spacer(Modifier.weight(1f));Surface(shape=RoundedCornerShape(10.dp),color=Gold.copy(.08f),border=BorderStroke(1.dp,Gold.copy(.75f)),modifier=Modifier.clickable{onCategory("ALL")}){
+    Text("View All  ›",Modifier.padding(horizontal=9.dp,vertical=5.dp),color=Gold,fontSize=9.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Monospace)}}
    Spacer(Modifier.height(10.dp))
    cats.chunked(3).forEachIndexed{index,row->
     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(9.dp)){
@@ -340,7 +345,7 @@ class MainActivity:ComponentActivity(){
 
 @Composable private fun GenericCategoryScreen(category:String,onBack:()->Unit,onCompare:(String)->Unit){
  var found by remember{mutableStateOf(false)}
- val title=when(category){"AC"->"AIR CONDITIONER";"FRIDGE"->"REFRIGERATOR";"AIR FRYER"->"AIR FRYER";"MICROWAVE"->"MICROWAVE OVEN";"SMARTWATCH"->"SMARTWATCH";"WASHING MACHINE"->"WASHING MACHINE";else->category}
+ val title=when(category){"AC"->"AIR CONDITIONER";"FRIDGE"->"REFRIGERATOR";"AIR FRYER"->"AIR FRYER";"MICROWAVE"->"MICROWAVE OVEN";"SMARTWATCH"->"SMARTWATCH";"WASHING MACHINE"->"WASHING MACHINE";"WATER PURIFIER"->"WATER PURIFIER";else->category}
  val specs=when(category){
   "MOBILE"->listOf("Brand" to listOf("Apple","Samsung","OnePlus","Xiaomi"),"Model" to listOf("Galaxy S25 Ultra","iPhone 17","OnePlus 13"),"RAM" to listOf("8GB","12GB","16GB"),"Storage" to listOf("128GB","256GB","512GB"),"Variant" to listOf("Black","Blue","Silver"))
   "TV"->listOf("Brand" to listOf("Sony","Samsung","LG","TCL"),"Size" to listOf("43 inch","50 inch","55 inch","65 inch"),"Panel" to listOf("LED","QLED","OLED"),"Resolution" to listOf("4K","Full HD"),"Refresh" to listOf("60Hz","120Hz"))
@@ -352,6 +357,7 @@ class MainActivity:ComponentActivity(){
   "MICROWAVE"->listOf("Brand" to listOf("LG","Samsung","IFB","Panasonic"),"Capacity" to listOf("20L","25L","28L","32L"),"Type" to listOf("Solo","Grill","Convection"),"Power" to listOf("800W","1000W","1200W"),"Control" to listOf("Touch","Knob"))
   "TABLET"->listOf("Brand" to listOf("Apple","Samsung","Lenovo","Xiaomi"),"Model" to listOf("iPad","Galaxy Tab","Tab P12"),"RAM" to listOf("4GB","8GB","12GB"),"Storage" to listOf("128GB","256GB","512GB"),"Screen" to listOf("10 inch","11 inch","12.9 inch"))
   "WASHING MACHINE"->listOf("Brand" to listOf("LG","Samsung","Whirlpool","IFB"),"Capacity" to listOf("6.5kg","7kg","8kg","9kg"),"Type" to listOf("Front Load","Top Load"),"Rating" to listOf("4★","5★"),"Inverter" to listOf("Inverter","Non-Inverter"))
+  "WATER PURIFIER"->listOf("Brand" to listOf("Aquaguard","Kent","Pureit","Livpure"),"Type" to listOf("RO","UV","RO+UV"),"Capacity" to listOf("7L","8L","10L"),"Purification" to listOf("RO+UV+UF","RO+UV"),"Rating" to listOf("4★","5★"))
   else->listOf("Brand" to listOf("LG","Samsung","Whirlpool","Haier"),"Capacity" to listOf("190L","240L","300L"),"Type" to listOf("Double Door","Single Door"),"Rating" to listOf("4★","5★"))
  }
  var values by remember{mutableStateOf(specs.associate{it.first to it.second.first()})}
@@ -404,7 +410,7 @@ class MainActivity:ComponentActivity(){
       onSearch={q->compareQuery=q;screen="COMPARE"}
     )
     "GEYSER"->GeyserScreen({screen="HOME"}){q->compareQuery=q;screen="COMPARE"}
-    "MOBILE","TV","AC","FRIDGE","LAPTOP","SMARTWATCH","AIR FRYER","MICROWAVE","TABLET","WASHING MACHINE"->GenericCategoryScreen(screen,{screen="HOME"}){q->compareQuery=q;screen="COMPARE"}
+    "MOBILE","TV","AC","FRIDGE","LAPTOP","SMARTWATCH","AIR FRYER","MICROWAVE","TABLET","WASHING MACHINE","WATER PURIFIER"->GenericCategoryScreen(screen,{screen="HOME"}){q->compareQuery=q;screen="COMPARE"}
     "SEARCH"->Box(Modifier.fillMaxSize().background(Bg)){LaunchedEffect(Unit){compareQuery=compareQuery;if(compareQuery.isNotBlank())screen="COMPARE"}}
     "COMPARE"->CompareScreen(compareQuery){screen="HOME"}
     else->Box(Modifier.fillMaxSize().background(Bg),contentAlignment=Alignment.Center){
