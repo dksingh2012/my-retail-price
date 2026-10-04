@@ -47,7 +47,7 @@ private val Muted=Color(0xFF9BAEC2)
 
 private data class LiveOffer(
  val retailer:String,val name:String,val brand:String,val price:Double,val mrp:Double?,
- val matchType:String,val productUrl:String,val available:Boolean
+ val matchType:String,val productUrl:String,val available:Boolean,val dataStatus:String
 )
 
 private suspend fun fetchLiveOffers(query:String):Result<List<LiveOffer>> = withContext(Dispatchers.IO){
@@ -64,7 +64,7 @@ private suspend fun fetchLiveOffers(query:String):Result<List<LiveOffer>> = with
     val o=arr.getJSONObject(i)
     add(LiveOffer(o.optString("retailer","Retailer"),o.optString("name",query),o.optString("brand",""),
       o.optDouble("price",0.0),if(o.has("mrp")&&!o.isNull("mrp"))o.optDouble("mrp") else null,
-      o.optString("match_type","alternative"),o.optString("product_url",""),o.optBoolean("available",true)))
+      o.optString("match_type","alternative"),o.optString("product_url",""),o.optBoolean("available",true),o.optString("data_status","live_authorized")))
    }
   }
   Result.success(list)
@@ -275,13 +275,14 @@ class MainActivity:ComponentActivity(){
     offers.isEmpty()->Text("No matching live products found. Try a broader model or brand search.",color=Muted,fontSize=12.sp,modifier=Modifier.padding(18.dp))
     else->{
      val exact=offers.filter{it.matchType=="exact_match"};val close=offers.filter{it.matchType=="close_match"};val alt=offers.filter{it.matchType=="alternative"}
-     Text(if(exact.isNotEmpty())"EXACT MATCH" else "MATCHED PRODUCTS",color=Cyan,fontSize=13.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace)
+     Text(if(offers.any{it.dataStatus=="reference"})"REFERENCE RESULTS" else if(exact.isNotEmpty())"EXACT MATCH" else "MATCHED PRODUCTS",color=Cyan,fontSize=13.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace)
+     if(offers.any{it.dataStatus=="reference"}){ Spacer(Modifier.height(5.dp)); Text("Live retailer feed is temporarily unavailable. Prices below are stored reference prices.",color=Muted,fontSize=9.sp,lineHeight=14.sp) }
      Spacer(Modifier.height(9.dp))
      offers.sortedWith(compareBy({it.matchType!="exact_match"},{it.price})).forEach{offer->
-      val accent=when(offer.matchType){"exact_match"->Green;"close_match"->Gold;else->Muted}
+      val accent=when(offer.matchType){"exact_match"->Green;"close_match"->Gold;"reference"->Gold;else->Muted}
       Surface(Modifier.fillMaxWidth().padding(bottom=9.dp),shape=RoundedCornerShape(17.dp),color=Panel,border=BorderStroke(1.dp,accent.copy(.55f))){Column(Modifier.padding(14.dp)){
        Row(verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){Text(offer.retailer.uppercase(),color=accent,fontSize=8.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Monospace);Spacer(Modifier.height(5.dp));Text(offer.name,color=White,fontSize=12.sp,fontWeight=FontWeight.Bold);Text(offer.brand,color=Muted,fontSize=9.sp)};Text("₹"+String.format("%.0f",offer.price),color=White,fontSize=20.sp,fontWeight=FontWeight.Black)}
-       Spacer(Modifier.height(8.dp));Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){Surface(shape=RoundedCornerShape(8.dp),color=accent.copy(.08f),border=BorderStroke(1.dp,accent.copy(.3f))){Text(offer.matchType.replace("_"," ").uppercase(),Modifier.padding(horizontal=8.dp,vertical=5.dp),color=accent,fontSize=7.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Monospace)};Text(if(offer.available)"IN STOCK" else "OUT OF STOCK",Modifier.padding(vertical=5.dp),color=if(offer.available)Green else Muted,fontSize=7.sp,fontFamily=FontFamily.Monospace)}}
+       Spacer(Modifier.height(8.dp));Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){Surface(shape=RoundedCornerShape(8.dp),color=accent.copy(.08f),border=BorderStroke(1.dp,accent.copy(.3f))){Text(if(offer.matchType=="reference")"REFERENCE PRICE" else offer.matchType.replace("_"," ").uppercase(),Modifier.padding(horizontal=8.dp,vertical=5.dp),color=accent,fontSize=7.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Monospace)};Text(if(offer.available)"IN STOCK" else "OUT OF STOCK",Modifier.padding(vertical=5.dp),color=if(offer.available)Green else Muted,fontSize=7.sp,fontFamily=FontFamily.Monospace)}}
       }
      }
     }
