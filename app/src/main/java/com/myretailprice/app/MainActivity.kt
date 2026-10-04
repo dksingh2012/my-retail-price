@@ -354,7 +354,7 @@ class MainActivity:ComponentActivity(){
   Box(Modifier.weight(1f)){
    when(screen){
     "HOME"->HomeScreen(
-      onCategory={it->screen=if(it=="ALL")"SEARCH" else it}
+      onCategory={it->screen=if(it=="ALL")"HOME" else it}
     )
     "GEYSER"->GeyserScreen({screen="HOME"}){q->compareQuery=q;screen="COMPARE"}
     "MOBILE","TV","AC","FRIDGE","LAPTOP","SMARTWATCH","AIR FRYER","MICROWAVE","TABLET","WASHING MACHINE","WATER PURIFIER"->GenericCategoryScreen(screen,{screen="HOME"}){q->compareQuery=q;screen="COMPARE"}
