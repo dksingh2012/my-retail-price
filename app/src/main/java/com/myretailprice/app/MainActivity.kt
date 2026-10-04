@@ -82,6 +82,23 @@ private suspend fun fetchLiveOffers(query:String):Result<List<LiveOffer>> = with
 }
 
 data class Cat(val name:String,val subtitle:String,val accent:Color)
+
+private fun categoryImageUrl(name:String):String = when(name){
+ "GEYSER"->"https://orientelectric.com/cdn/shop/files/Primary_image_100x.png?v=1755065769"
+ "MOBILE"->"https://images.samsung.com/in/smartphones/galaxy-s25/buy/color_blueBlack_thumbnail.png"
+ "TV"->"https://sony.scene7.com/is/image/sonyglobalsolutions/TVFY24_UP_PrimaryTout_0pt-image01-d?%24originalDimensions%24=&fmt=png-alpha"
+ "AC"->"https://www.lg.com/content/dam/channel/wcms/in/images/split-ac/us-q12jnxe/US-Q12JNXE-2010X1334.jpg/jcr%3Acontent/renditions/thum-1600x1062.jpeg?w=800"
+ "FRIDGE"->"https://images.samsung.com/is/image/samsung/p6pim/in/rs7hcg8543b1hl/gallery/in-side-by-side-family-hub-449420-rs7hcg8543b1hl-thumb-535087566?%24104_104_PNG%24="
+ "LAPTOP"->"https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=500&q=80"
+ "SMARTWATCH"->"https://images.samsung.com/is/image/samsung/p6pim/in/feature/others/in-feature-galaxy-watch7-l300-543333536?%24FB_TYPE_A_JPG%24="
+ "AIR FRYER"->"https://images.philips.com/is/image/philipsconsumer/vrs_c9cb4219_e285_4e9e_82a807b0d8d89f2a?%24png%24=&fit=constrain&hei=410&wid=410"
+ "MICROWAVE"->"https://www.lg.com/content/dam/channel/wcms/in/images/microwave-ovens/mc2846sl_dslqiln_eail_in_c/gallery/MC2846SL-microwave-ovens-Front-view-DZ-01.jpg/jcr%3Acontent/renditions/thum-1600x1062.jpeg?w=800"
+ "TABLET"->"https://images.samsung.com/is/image/samsung/p6pim/es/sm-x110nzaaeub/gallery/es-galaxy-tab-a9-sm-x110-sm-x110nzaaeub-539021728?%241164_776_PNG%24="
+ "WASHING MACHINE"->"https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?auto=format&fit=crop&w=500&q=80"
+ "WATER PURIFIER"->"https://havells.com/media/wysiwyg/GHWUPRL015_1.jpg"
+ else->""
+}
+
 private val cats=listOf(
  Cat("GEYSER","Capacity & rating",Gold),
  Cat("MOBILE","Phones & variants",Cyan),
@@ -108,20 +125,20 @@ class MainActivity:ComponentActivity(){
 }
 
 @Composable private fun LogoHeader(){
- Row(Modifier.fillMaxWidth().padding(horizontal=18.dp,vertical=14.dp),verticalAlignment=Alignment.Top){
+ Row(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=7.dp),verticalAlignment=Alignment.Top){
   Column(Modifier.weight(1f)){
    Row(verticalAlignment=Alignment.CenterVertically){
     Text("MY RETAIL PRICE",style=TextStyle(
      brush=Brush.linearGradient(listOf(Color(0xFFFFE9A6),Gold,Color(0xFFFF8A00),White,Cyan,Color(0xFF008CFF))),
-     fontSize=24.sp,lineHeight=27.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace,letterSpacing=0.4.sp,
+     fontSize=19.sp,lineHeight=21.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace,letterSpacing=0.4.sp,
      shadow=androidx.compose.ui.graphics.Shadow(color=Gold.copy(.65f),offset=Offset(0f,2f),blurRadius=7f)))
    }
-   Text("—  C O M P A R E   &   S H O P  —",color=Cyan,fontSize=9.sp,letterSpacing=2.6.sp,fontFamily=FontFamily.Monospace,fontWeight=FontWeight.Bold)
+   Text("—  C O M P A R E   &   S H O P  —",color=Cyan,fontSize=7.sp,letterSpacing=2.0.sp,fontFamily=FontFamily.Monospace,fontWeight=FontWeight.Bold)
   }
   Surface(shape=RoundedCornerShape(16.dp),color=Color(0xFF071A2A),border=BorderStroke(1.3.dp,Cyan.copy(.8f))){
-   Column(Modifier.width(112.dp).padding(vertical=9.dp),horizontalAlignment=Alignment.CenterHorizontally){
-    Text("⌖  Gurugram",color=White,fontSize=10.sp,fontWeight=FontWeight.Bold)
-    Spacer(Modifier.height(6.dp));Text("122001 ⌄",color=Cyan,fontSize=11.sp,fontWeight=FontWeight.Bold)
+   Column(Modifier.width(86.dp).padding(vertical=5.dp),horizontalAlignment=Alignment.CenterHorizontally){
+    Text("⌖  Gurugram",color=White,fontSize=7.sp,fontWeight=FontWeight.Bold)
+    Spacer(Modifier.height(2.dp));Text("122001 ⌄",color=Cyan,fontSize=8.sp,fontWeight=FontWeight.Bold)
    }
   }
  }
@@ -173,13 +190,17 @@ class MainActivity:ComponentActivity(){
 }
 
 @Composable private fun CategoryCard(cat:Cat,onClick:()->Unit){
- Surface(Modifier.height(174.dp).clickable{onClick()},shape=RoundedCornerShape(20.dp),color=Color(0xFF07111F),border=BorderStroke(1.5.dp,cat.accent.copy(.62f))){
-  Column(Modifier.padding(8.dp)){
-   Box(Modifier.fillMaxWidth().height(108.dp),contentAlignment=Alignment.Center){Art(cat,Modifier.fillMaxSize())}
-   Spacer(Modifier.height(5.dp))
+ Surface(Modifier.height(112.dp).clickable{onClick()},shape=RoundedCornerShape(15.dp),color=Color(0xFF07111F),border=BorderStroke(1.2.dp,cat.accent.copy(.55f))){
+  Column(Modifier.padding(5.dp)){
+   Box(Modifier.fillMaxWidth().height(72.dp),contentAlignment=Alignment.Center){
+    Surface(Modifier.fillMaxSize(),shape=RoundedCornerShape(12.dp),color=Color(0xFF0B1625)){
+     RemoteProductImage(categoryImageUrl(cat.name),Modifier.fillMaxSize().padding(5.dp))
+    }
+   }
+   Spacer(Modifier.height(2.dp))
    Row(verticalAlignment=Alignment.CenterVertically){
-    Text(cat.name,color=White,fontSize=13.sp,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace,modifier=Modifier.weight(1f))
-    Text("›",color=cat.accent,fontSize=27.sp,fontWeight=FontWeight.Bold)
+    Text(cat.name,color=White,fontSize=9.5.sp,maxLines=1,fontWeight=FontWeight.Black,fontFamily=FontFamily.Monospace,modifier=Modifier.weight(1f))
+    Text("›",color=cat.accent,fontSize=18.sp,fontWeight=FontWeight.Bold)
    }
   }
  }
@@ -188,21 +209,21 @@ class MainActivity:ComponentActivity(){
 @Composable private fun HomeScreen(onCategory:(String)->Unit){
  Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).background(Bg)){
   LogoHeader()
-  Column(Modifier.padding(horizontal=18.dp)){
-   Row(verticalAlignment=Alignment.Bottom){Text("Compare prices. ",color=White,fontSize=24.sp,fontWeight=FontWeight.Black);Text("Buy smarter.",color=Cyan,fontSize=24.sp,fontWeight=FontWeight.Black)}
-   Spacer(Modifier.height(6.dp));Text("Find the exact model and compare verified retailer prices.",color=Color(0xFFBED3E5),fontSize=12.sp)
-   Spacer(Modifier.height(22.dp))
-   Row(verticalAlignment=Alignment.CenterVertically){Text("POPULAR CATEGORIES",color=Cyan,fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=1.5.sp,fontFamily=FontFamily.Monospace);Spacer(Modifier.weight(1f));Surface(shape=RoundedCornerShape(10.dp),color=Gold.copy(.08f),border=BorderStroke(1.dp,Gold.copy(.75f)),modifier=Modifier.clickable{onCategory("ALL")}){
-    Text("View All  ›",Modifier.padding(horizontal=9.dp,vertical=5.dp),color=Gold,fontSize=9.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Monospace)}}
-   Spacer(Modifier.height(10.dp))
+  Column(Modifier.padding(horizontal=12.dp)){
+   Row(verticalAlignment=Alignment.Bottom){Text("Compare prices. ",color=White,fontSize=18.sp,fontWeight=FontWeight.Black);Text("Buy smarter.",color=Cyan,fontSize=18.sp,fontWeight=FontWeight.Black)}
+   Spacer(Modifier.height(6.dp));Text("Find the exact model and compare verified retailer prices.",color=Color(0xFFBED3E5),fontSize=9.sp)
+   Spacer(Modifier.height(8.dp))
+   Row(verticalAlignment=Alignment.CenterVertically){Text("POPULAR CATEGORIES",color=Cyan,fontSize=8.sp,fontWeight=FontWeight.Bold,letterSpacing=1.5.sp,fontFamily=FontFamily.Monospace);Spacer(Modifier.weight(1f));Surface(shape=RoundedCornerShape(10.dp),color=Gold.copy(.08f),border=BorderStroke(1.dp,Gold.copy(.75f)),modifier=Modifier.clickable{onCategory("ALL")}){
+    Text("View All  ›",Modifier.padding(horizontal=7.dp,vertical=3.dp),color=Gold,fontSize=8.sp,fontWeight=FontWeight.Bold,fontFamily=FontFamily.Monospace)}}
+   Spacer(Modifier.height(5.dp))
    cats.chunked(3).forEachIndexed{index,row->
-    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(9.dp)){
+    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(5.dp)){
      row.forEach{cat->Box(Modifier.weight(1f)){CategoryCard(cat,{onCategory(cat.name)})}}
      repeat(3-row.size){Spacer(Modifier.weight(1f))}
     }
-    if(index<cats.chunked(3).lastIndex)Spacer(Modifier.height(9.dp))
+    if(index<cats.chunked(3).lastIndex)Spacer(Modifier.height(5.dp))
    }
-   Spacer(Modifier.height(28.dp))
+   Spacer(Modifier.height(8.dp))
   }
  }
 }
